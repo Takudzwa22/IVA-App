@@ -1,0 +1,8 @@
+{
+  "name": "IVA APP OFFICIAL DEMO",
+  "description": "A comprehensive student management application with real-time schedules, grade tracking, assignment management, and an integrated AI study assistant.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

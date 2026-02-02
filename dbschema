@@ -1,0 +1,416 @@
+create table public.grade_4_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade4_students_pkey primary key ("Number"),
+  constraint grade4_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_5_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_5_students_pkey primary key ("Number"),
+  constraint grade_5_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_5_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_5_students_pkey primary key ("Number"),
+  constraint grade_5_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_7_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_7_students_pkey primary key ("Number"),
+  constraint grade_7_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_8_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_8_students_pkey primary key ("Number"),
+  constraint grade_8_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_9_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_9_students_pkey primary key ("Number"),
+  constraint grade_9_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_10_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_10_students_pkey primary key ("Number"),
+  constraint grade_10_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_11_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_11_students_pkey primary key ("Number"),
+  constraint grade_11_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_12_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" numeric null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_12_students_pkey primary key ("Number"),
+  constraint grade_12_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public.grade_british_students (
+  "Number" numeric not null,
+  "Surname" text null,
+  "Name" text null,
+  "Full Name" text null,
+  "Mother" text null,
+  "Mother Cell" text null,
+  "Father" text null,
+  "Father Cell" text null,
+  "Grade" text null,
+  user_role public.user_role null default 'student'::user_role,
+  constraint grade_british_students_pkey primary key ("Number"),
+  constraint grade_british_students_Number_key unique ("Number")
+) TABLESPACE pg_default;
+
+create table public."Subjects_4_5_6" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  constraint Subjects_4_5_6_pkey primary key (id),
+  constraint Subjects_4_5_6_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public."Subjects_7_8_9" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  constraint Subjects_7_8_9_pkey primary key (id),
+  constraint Subjects_7_8_9_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public."Subjects_10" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  timetable_aliases jsonb null default '[]'::jsonb,
+  constraint Subjects_10_11_12_pkey primary key (id),
+  constraint Subjects_10_11_12_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public."Subjects_11" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  timetable_aliases jsonb null default '[]'::jsonb,
+  constraint Subjects_11_pkey primary key (id),
+  constraint Subjects_11_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public."Subjects_12" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  timetable_aliases jsonb null default '[]'::jsonb,
+  constraint Subjects_12_pkey primary key (id),
+  constraint Subjects_12_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public."Subjects_british" (
+  id uuid not null default gen_random_uuid (),
+  "Subject" text not null,
+  constraint Subjects_british_pkey primary key (id),
+  constraint Subjects_british_Subject_key unique ("Subject")
+) TABLESPACE pg_default;
+
+create table public.teachers (
+  "Name" text null,
+  "Surname" text null,
+  "Full name" text null,
+  "Email" text not null,
+  user_role text null,
+  constraint teachers_pkey primary key ("Email")
+) TABLESPACE pg_default;
+
+create table public.submissions (
+  id bigint generated by default as identity not null,
+  created_at timestamp with time zone not null default now(),
+  
+  -- Session Info
+  date date not null,
+  grade text not null,
+  subject_id uuid not null,
+  subject_name text null, -- Denormalized for easier display
+  
+  -- Teacher Link
+  submitted_by_email text not null references public.teachers("Email"),
+  submitted_by_name text null,
+  
+  -- Student Arrays
+  student_numbers numeric[] default '{}', -- All students in class
+  student_names text[] default '{}',      -- Corresponds to numbers
+  
+  -- Status Buckets (Arrays of Student Numbers)
+  present_students numeric[] default '{}',
+  absent_students numeric[] default '{}',
+  late_students numeric[] default '{}',
+  excused_students numeric[] default '{}',
+  blocked_students numeric[] default '{}',
+  
+  notes text null,
+  
+  constraint submissions_pkey primary key (id)
+) TABLESPACE pg_default;
+
+create table public.timetables_10 (
+  "Student Num" numeric not null,
+  grade bigint not null,
+  "Name" text null,
+  "Surname" text null,
+  "A1" text null,
+  "A2" text null,
+  "A3" text null,
+  "A4" text null,
+  "A5" text null,
+  "B1" text null,
+  "B2" text null,
+  "B3" text null,
+  "B4" text null,
+  "B5" text null,
+  "C1" text null,
+  "C2" text null,
+  "C3" text null,
+  "C4" text null,
+  "C5" text null,
+  "D1" text null,
+  "D2" text null,
+  "D3" text null,
+  "D4" text null,
+  "D5" text null,
+  "E1" text null,
+  "E2" text null,
+  "E3" text null,
+  "E4" text null,
+  "E5" text null,
+  "F1" text null,
+  "F2" text null,
+  "F3" text null,
+  "F4" text null,
+  "F5" text null,
+  "G1" text null,
+  "G2" text null,
+  "G3" text null,
+  "G4" text null,
+  "G5" text null,
+  "H1" text null,
+  "H2" text null,
+  "H3" text null,
+  "H4" text null,
+  "H5" text null,
+  "I1" text null,
+  "I2" text null,
+  "I3" text null,
+  "I4" text null,
+  "I5" text null,
+  "J1" text null,
+  "J2" text null,
+  "J3" text null,
+  "J4" text null,
+  "J5" text null,
+  constraint timetables_pkey primary key ("Student Num")
+) TABLESPACE pg_default;
+
+create table public.timetables_11 (
+  "Student Num" numeric not null,
+  grade bigint not null,
+  "Name" text null,
+  "Surname" text null,
+  "A1" text null,
+  "A2" text null,
+  "A3" text null,
+  "A4" text null,
+  "A5" text null,
+  "B1" text null,
+  "B2" text null,
+  "B3" text null,
+  "B4" text null,
+  "B5" text null,
+  "C1" text null,
+  "C2" text null,
+  "C3" text null,
+  "C4" text null,
+  "C5" text null,
+  "D1" text null,
+  "D2" text null,
+  "D3" text null,
+  "D4" text null,
+  "D5" text null,
+  "E1" text null,
+  "E2" text null,
+  "E3" text null,
+  "E4" text null,
+  "E5" text null,
+  "F1" text null,
+  "F2" text null,
+  "F3" text null,
+  "F4" text null,
+  "F5" text null,
+  "G1" text null,
+  "G2" text null,
+  "G3" text null,
+  "G4" text null,
+  "G5" text null,
+  "H1" text null,
+  "H2" text null,
+  "H3" text null,
+  "H4" text null,
+  "H5" text null,
+  "I1" text null,
+  "I2" text null,
+  "I3" text null,
+  "I4" text null,
+  "I5" text null,
+  "J1" text null,
+  "J2" text null,
+  "J3" text null,
+  "J4" text null,
+  "J5" text null,
+  constraint timetables_11_pkey primary key ("Student Num")
+) TABLESPACE pg_default;
+
+create table public.timetables_12 (
+  "Student Num" numeric not null,
+  grade bigint not null,
+  "Name" text null,
+  "Surname" text null,
+  "A1" text null,
+  "A2" text null,
+  "A3" text null,
+  "A4" text null,
+  "A5" text null,
+  "B1" text null,
+  "B2" text null,
+  "B3" text null,
+  "B4" text null,
+  "B5" text null,
+  "C1" text null,
+  "C2" text null,
+  "C3" text null,
+  "C4" text null,
+  "C5" text null,
+  "D1" text null,
+  "D2" text null,
+  "D3" text null,
+  "D4" text null,
+  "D5" text null,
+  "E1" text null,
+  "E2" text null,
+  "E3" text null,
+  "E4" text null,
+  "E5" text null,
+  "F1" text null,
+  "F2" text null,
+  "F3" text null,
+  "F4" text null,
+  "F5" text null,
+  "G1" text null,
+  "G2" text null,
+  "G3" text null,
+  "G4" text null,
+  "G5" text null,
+  "H1" text null,
+  "H2" text null,
+  "H3" text null,
+  "H4" text null,
+  "H5" text null,
+  "I1" text null,
+  "I2" text null,
+  "I3" text null,
+  "I4" text null,
+  "I5" text null,
+  "J1" text null,
+  "J2" text null,
+  "J3" text null,
+  "J4" text null,
+  "J5" text null,
+  constraint timetables_12_pkey primary key ("Student Num")
+) TABLESPACE pg_default;
+
+create table public.timetable_headers (
+  code text not null,
+  weekday text not null,
+  period_number integer not null,
+  start_time time without time zone not null,
+  end_time time without time zone not null,
+  constraint timetable_headers_pkey primary key (code)
+) TABLESPACE pg_default;
