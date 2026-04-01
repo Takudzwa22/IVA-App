@@ -91,8 +91,8 @@ const TeacherDashboardScreen: React.FC<TeacherDashboardScreenProps> = ({
                         <p className="text-2xl font-bold text-white">{assessments.length}</p>
                         <p className="text-indigo-200 text-xs">Assessments</p>
                     </div>
-                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 text-center">
-                        <p className="text-2xl font-bold text-white">{upcomingAssessments.length}</p>
+                    <div className={`backdrop-blur-md rounded-2xl p-4 border text-center ${upcomingAssessments.length > 0 ? 'bg-amber-400/20 border-amber-400/30' : 'bg-white/10 border-white/10'}`}>
+                        <p className={`text-2xl font-bold ${upcomingAssessments.length > 0 ? 'text-amber-300' : 'text-white'}`}>{upcomingAssessments.length}</p>
                         <p className="text-indigo-200 text-xs">Due Soon</p>
                     </div>
                 </div>

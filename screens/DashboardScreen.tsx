@@ -4,11 +4,9 @@ import React, { useState, useMemo } from 'react';
 import { useStudentTimetableAPI, useStudentAssessmentsAPI } from '../lib/hooks';
 import type { Student, AssessmentWithMark } from '../types';
 import type { DetailedScheduleItem } from '../lib/hooks/useTimetableAPI';
-import { mockAnnouncements } from '../lib/__fixtures__/mockData';
 
 interface DashboardScreenProps {
   student: Student | null;
-  onOpenAI: () => void;
   onViewAnnouncements: () => void;
   onAssessmentSelect?: (assessment: AssessmentWithMark & { subjectName: string }) => void;
 }
@@ -295,7 +293,7 @@ const UpcomingAssignments: React.FC<{
     );
   };
 
-const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, onViewAnnouncements, onAssessmentSelect }) => {
+const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnouncements, onAssessmentSelect }) => {
   // Use student from props (passed from login)
   const studentNumber = student?.student_number ?? null;
   const studentGrade = student?.grade;
@@ -305,7 +303,6 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
   const [pivotDate, setPivotDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -377,6 +374,22 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
 
   const isToday = isSameDay(selectedDate, new Date());
   const isWeekend = selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
+
+  // Find the next upcoming class on today's schedule
+  const nextClass = useMemo((): (DetailedScheduleItem & { minsUntil: number }) | null => {
+    if (!isToday || !timetable || timetable.type !== 'detailed') return null;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const todayClasses = classes.filter(p => p.start_time);
+    for (const p of todayClasses) {
+      const [h, m] = p.start_time.split(':').map(Number);
+      const startMins = h * 60 + m;
+      if (startMins > nowMins) {
+        return { ...p, minsUntil: startMins - nowMins };
+      }
+    }
+    return null;
+  }, [classes, isToday, timetable]);
 
   const displayName = student
     ? `${student.first_name} ${student.last_name}`
@@ -479,69 +492,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
       {/* Main Content Area - Purple Background */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32 space-y-6 relative z-10">
 
-        {/* Announcements Section - First */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-              Announcements
-            </h2>
-            <button
-              onClick={onViewAnnouncements}
-              className="text-xs font-bold text-white/80 hover:text-white bg-white/10 px-2.5 py-1 rounded-lg transition-colors border border-white/20"
-            >
-              VIEW ALL
-            </button>
-          </div>
-
-          <div className="bg-white rounded-3xl p-4 shadow-lg space-y-3">
-            {mockAnnouncements
-              .filter(a => !dismissedAnnouncements.has(a.id))
-              .slice(0, 2)
-              .map(announcement => (
-                <div
-                  key={announcement.id}
-                  className="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
-                  onClick={onViewAnnouncements}
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-red-500"></div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDismissedAnnouncements(prev => new Set(Array.from(prev).concat(announcement.id)));
-                    }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Dismiss"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
-                  <div className="flex justify-between items-start mb-2 pl-2 pr-6">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      {new Date(announcement.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${announcement.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                      {announcement.category}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-base mb-1 group-hover:text-orange-600 transition-colors pl-2">
-                    {announcement.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-1 font-medium pl-2">
-                    {announcement.content}
-                  </p>
-                </div>
-              ))}
-            {mockAnnouncements.filter(a => !dismissedAnnouncements.has(a.id)).length === 0 && (
-              <div className="text-center py-6 text-gray-400">
-                <span className="material-symbols-outlined text-3xl mb-2">notifications_off</span>
-                <p className="text-sm font-medium">All caught up!</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Classes Section - Second */}
+        {/* Classes Section */}
         <section>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
@@ -600,6 +551,27 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
               </div>
             )}
           </div>
+
+          {/* Next class chip — only on today's weekday when there's a future class */}
+          {nextClass && (
+            <div className="mt-3 flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10">
+              <div className="w-8 h-8 rounded-full bg-indigo-400/30 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-indigo-200 text-base">arrow_forward</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Next class</p>
+                <p className="text-sm font-bold text-white truncate">{nextClass.subject}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-bold text-indigo-200">
+                  {nextClass.minsUntil < 60
+                    ? `${nextClass.minsUntil}m`
+                    : `${Math.floor(nextClass.minsUntil / 60)}h ${nextClass.minsUntil % 60}m`}
+                </p>
+                <p className="text-[10px] text-indigo-300">{formatTime(nextClass.start_time)}</p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Upcoming Assignments - Third */}

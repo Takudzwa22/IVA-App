@@ -15,7 +15,6 @@ export enum Screen {
   PROFILE = 'profile',
   CLASS_DETAILS = 'class_details',
   ASSIGNMENT_DETAILS = 'assignment_details',
-  AI_ASSISTANT = 'ai_assistant',
   SUBJECT_GRADES = 'subject_grades',
   ANNOUNCEMENTS = 'announcements',
   MARKS_DETAIL = 'marks_detail',

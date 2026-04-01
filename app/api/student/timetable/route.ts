@@ -24,10 +24,28 @@ export async function GET(request: NextRequest) {
         const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
         if (!supabaseUrl || !serviceRoleKey) {
-            return NextResponse.json(
-                { error: 'Server configuration error' },
-                { status: 500 }
-            );
+            // Dev mode — return empty timetable data
+            const grade = parseInt(gradeParam, 10);
+            const isBritish = gradeParam.toLowerCase().includes('british');
+            const hasDetailedTimetable = grade >= 10 && grade <= 12 && !isBritish;
+
+            if (hasDetailedTimetable) {
+                return NextResponse.json({
+                    type: 'detailed',
+                    grade,
+                    studentNumber: parseInt(studentNumber, 10),
+                    schedule: {
+                        Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [],
+                    },
+                });
+            } else {
+                return NextResponse.json({
+                    type: 'simple',
+                    grade: isBritish ? 'british' : grade,
+                    studentNumber: parseInt(studentNumber, 10),
+                    subjects: [],
+                });
+            }
         }
 
         // Create admin client with service role key (bypasses RLS)

@@ -17,13 +17,13 @@ import { NavItem, SidebarWithAI, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from '
 interface MobileLayoutProps {
     children: React.ReactNode;
     navItems: NavItem[];
-    floatingAction?: React.ReactNode;
+    navActiveClass?: string;
 }
 
 /**
  * Mobile layout with bottom navigation bar
  */
-export function MobileLayout({ children, navItems, floatingAction }: MobileLayoutProps) {
+export function MobileLayout({ children, navItems, navActiveClass }: MobileLayoutProps) {
     return (
         <div className="min-h-screen bg-background">
             <div className="w-full min-h-screen bg-background relative">
@@ -39,22 +39,12 @@ export function MobileLayout({ children, navItems, floatingAction }: MobileLayou
                             <button
                                 key={item.key}
                                 onClick={item.onClick}
-                                className={`flex flex-col items-center flex-1 min-w-0 transition-all duration-300 ${item.isActive ? 'text-primary' : 'text-gray-400'
-                                    }`}
+                                className={`flex flex-col items-center flex-1 min-w-0 transition-all duration-200 ${item.isActive ? (navActiveClass || 'text-primary') : 'text-gray-400'}`}
                             >
-                                <div className={`transition-all duration-300 ${item.isActive ? '-translate-y-1' : 'translate-y-1'}`}>
-                                    <span className={`material-symbols-outlined text-2xl ${item.isActive ? 'fill scale-110' : ''}`}>
-                                        {item.icon}
-                                    </span>
-                                </div>
-                                <span
-                                    style={{
-                                        display: item.isActive ? 'block' : 'none',
-                                        opacity: item.isActive ? 1 : 0,
-                                        maxWidth: item.isActive ? '100px' : '0px'
-                                    }}
-                                    className="text-[10px] font-bold mt-0.5 whitespace-nowrap overflow-hidden transition-all duration-300"
-                                >
+                                <span className={`material-symbols-outlined text-2xl transition-all duration-200 ${item.isActive ? 'fill scale-110' : ''}`}>
+                                    {item.icon}
+                                </span>
+                                <span className={`text-[10px] font-semibold mt-0.5 whitespace-nowrap transition-all duration-200 ${item.isActive ? 'opacity-100' : 'opacity-60'}`}>
                                     {item.label}
                                 </span>
                             </button>
@@ -62,12 +52,6 @@ export function MobileLayout({ children, navItems, floatingAction }: MobileLayou
                     </div>
                 </nav>
 
-                {/* Floating Action */}
-                {floatingAction && (
-                    <div className="fixed bottom-24 right-4 z-40">
-                        {floatingAction}
-                    </div>
-                )}
             </div>
         </div>
     );
@@ -81,14 +65,14 @@ interface DesktopLayoutProps {
     children: React.ReactNode;
     navItems: NavItem[];
     sidebarHeader?: React.ReactNode;
-    onOpenAI?: () => void;
+    navActiveClass?: string;
 }
 
 /**
  * Desktop layout with collapsible sidebar and content card
  */
 // DesktopLayout: Auto-collapse on tablet, allow manual toggle
-export function DesktopLayout({ children, navItems, sidebarHeader, onOpenAI }: DesktopLayoutProps) {
+export function DesktopLayout({ children, navItems, sidebarHeader, navActiveClass }: DesktopLayoutProps) {
     const deviceType = useDeviceType();
     // Default to collapsed on tablet
     const [isCollapsed, setIsCollapsed] = useState(() => deviceType === 'tablet');
@@ -102,9 +86,9 @@ export function DesktopLayout({ children, navItems, sidebarHeader, onOpenAI }: D
             <SidebarWithAI
                 items={navItems}
                 header={sidebarHeader}
-                onOpenAI={onOpenAI}
                 isCollapsed={isCollapsed}
                 onCollapseChange={setIsCollapsed}
+                activeClass={navActiveClass}
             />
 
             {/* Main content area - dynamic margin synced with sidebar */}
@@ -135,10 +119,7 @@ interface ResponsiveLayoutProps {
     children: React.ReactNode;
     navItems: NavItem[];
     sidebarHeader?: React.ReactNode;
-    /** Floating AI button for mobile */
-    floatingAIButton?: React.ReactNode;
-    /** AI button handler for desktop sidebar */
-    onOpenAI?: () => void;
+    navActiveClass?: string;
 }
 
 /**
@@ -148,8 +129,7 @@ export function ResponsiveLayout({
     children,
     navItems,
     sidebarHeader,
-    floatingAIButton,
-    onOpenAI,
+    navActiveClass,
 }: ResponsiveLayoutProps) {
     const deviceType = useDeviceType();
     const [mounted, setMounted] = React.useState(false);
@@ -165,14 +145,14 @@ export function ResponsiveLayout({
 
     if (deviceType === 'mobile') {
         return (
-            <MobileLayout navItems={navItems} floatingAction={floatingAIButton}>
+            <MobileLayout navItems={navItems} navActiveClass={navActiveClass}>
                 {children}
             </MobileLayout>
         );
     }
 
     return (
-        <DesktopLayout navItems={navItems} sidebarHeader={sidebarHeader} onOpenAI={onOpenAI}>
+        <DesktopLayout navItems={navItems} sidebarHeader={sidebarHeader} navActiveClass={navActiveClass}>
             {children}
         </DesktopLayout>
     );

@@ -158,13 +158,13 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
     };
 
     const icon = selectedSubject ? getSubjectIcon(selectedSubject) : 'assignment';
-    const gradient = selectedSubject ? getSubjectGradient(selectedSubject) : 'from-indigo-500 to-purple-500';
+    const gradient = selectedSubject ? getSubjectGradient(selectedSubject) : 'from-violet-500 to-indigo-600';
 
     return (
-        <div className="h-full bg-indigo-900 overflow-y-auto relative">
+        <div className="h-full bg-violet-950 overflow-y-auto relative">
             {/* Background Blobs */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-violet-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-indigo-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
             <div className="px-6 py-6 pb-32 relative z-10">
                 {/* Header */}
@@ -177,7 +177,7 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                     </button>
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold text-white">{selectedSubject || 'All Assessments'}</h1>
-                        <p className="text-indigo-200 text-sm">Grade 10</p>
+                        <p className="text-violet-200 text-sm">Grade 10</p>
                     </div>
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
                         <span className="material-symbols-outlined text-white">{icon}</span>
@@ -187,7 +187,7 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                 {/* Add Button */}
                 <button
                     onClick={handleCreate}
-                    className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl mb-6 flex items-center justify-center gap-2 shadow-lg hover:from-indigo-400 hover:to-purple-400 transition-all"
+                    className="w-full bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold py-4 rounded-2xl mb-6 flex items-center justify-center gap-2 shadow-lg hover:from-violet-400 hover:to-indigo-500 transition-all"
                 >
                     <span className="material-symbols-outlined">add</span>
                     Add New Assessment
@@ -243,27 +243,29 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+                                <div className="mt-4 pt-3 border-t border-gray-100 space-y-2">
                                     <button
                                         onClick={() => onGradeAssessment(assessment)}
-                                        className="flex-1 py-2 px-3 bg-green-50 text-green-600 rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-green-100 transition-colors"
+                                        className="w-full py-2.5 bg-gradient-to-r from-violet-500 to-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 hover:from-violet-400 hover:to-indigo-500 transition-all shadow-sm"
                                     >
                                         <span className="material-symbols-outlined text-lg">grading</span>
-                                        Grade
+                                        Grade Students
                                     </button>
-                                    <button
-                                        onClick={() => handleEdit(assessment)}
-                                        className="flex-1 py-2 px-3 bg-blue-50 text-blue-600 rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-blue-100 transition-colors"
-                                    >
-                                        <span className="material-symbols-outlined text-lg">edit</span>
-                                        Edit
-                                    </button>
-                                    <button
-                                        onClick={() => setShowDeleteConfirm(assessment.id)}
-                                        className="py-2 px-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium flex items-center justify-center hover:bg-red-100 transition-colors"
-                                    >
-                                        <span className="material-symbols-outlined text-lg">delete</span>
-                                    </button>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleEdit(assessment)}
+                                            className="flex-1 py-2 px-3 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium flex items-center justify-center gap-1 hover:bg-gray-200 transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">edit</span>
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => setShowDeleteConfirm(assessment.id)}
+                                            className="py-2 px-3 bg-red-50 text-red-600 rounded-xl text-sm font-medium flex items-center justify-center hover:bg-red-100 transition-colors"
+                                        >
+                                            <span className="material-symbols-outlined text-lg">delete</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -380,7 +382,7 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                                 <button
                                     type="submit"
                                     disabled={isSaving}
-                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50"
+                                    className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-violet-500 hover:to-indigo-500 transition-all disabled:opacity-50"
                                 >
                                     {isSaving ? (
                                         <>

@@ -335,6 +335,28 @@ const AssessmentsScreen: React.FC<AssessmentsScreenProps> = ({ student, onAssess
         return subjects.flatMap(s => s.assessments);
     }, [subjects]);
 
+    // Compute overall grade overview
+    const overallStats = React.useMemo(() => {
+        const subjectsWithMarks = subjects.filter(s =>
+            s.assessments.some(a => a.mark?.isPublished && a.mark.obtained !== null && a.max_marks)
+        );
+        if (subjectsWithMarks.length === 0) return null;
+        const perSubjectAvg = subjectsWithMarks.map(s => {
+            const published = s.assessments.filter(a => a.mark?.isPublished && a.mark.obtained !== null && a.max_marks);
+            const sum = published.reduce((acc, a) => acc + (a.mark!.obtained! / a.max_marks!) * 100, 0);
+            return sum / published.length;
+        });
+        const overall = perSubjectAvg.reduce((a, b) => a + b, 0) / perSubjectAvg.length;
+        const best = subjectsWithMarks.reduce((prev, curr) => {
+            const prevPub = prev.assessments.filter(a => a.mark?.isPublished && a.mark.obtained !== null && a.max_marks);
+            const currPub = curr.assessments.filter(a => a.mark?.isPublished && a.mark.obtained !== null && a.max_marks);
+            const prevAvg = prevPub.reduce((a, b) => a + (b.mark!.obtained! / b.max_marks!) * 100, 0) / (prevPub.length || 1);
+            const currAvg = currPub.reduce((a, b) => a + (b.mark!.obtained! / b.max_marks!) * 100, 0) / (currPub.length || 1);
+            return currAvg > prevAvg ? curr : prev;
+        });
+        return { overall: Math.round(overall), count: subjectsWithMarks.length, total: subjects.length, bestSubject: best.subjectName };
+    }, [subjects]);
+
     // Filter subjects based on selected date
     const filteredSubjects = React.useMemo(() => {
         if (!selectedDate) return subjects;
@@ -395,17 +417,17 @@ const AssessmentsScreen: React.FC<AssessmentsScreenProps> = ({ student, onAssess
     }
 
     return (
-        <div className="flex flex-col h-full bg-indigo-900 overflow-hidden">
+        <div className="flex flex-col h-full bg-violet-950 overflow-hidden">
             {/* Dark Header */}
             <div className="pt-8 px-6 pb-6 shrink-0 relative z-0">
                 {/* Background Blobs */}
-                <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
+                <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-violet-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
+                <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-indigo-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
                 <header className="flex items-center justify-between mb-2 relative z-10">
                     <div>
                         <h1 className="text-2xl font-bold text-white">Grades</h1>
-                        <p className="text-sm text-indigo-200">
+                        <p className="text-sm text-violet-200">
                             {currentCycle ? `Cycle ${currentCycle.cycle} In Progress` : 'Viewing Grades'}
                         </p>
                     </div>
@@ -456,6 +478,27 @@ const AssessmentsScreen: React.FC<AssessmentsScreenProps> = ({ student, onAssess
                         </div>
                     )}
 
+                    {/* Grade Overview Card */}
+                    {!isLoading && !error && overallStats && (
+                        <div className="bg-gradient-to-br from-violet-500 to-indigo-600 rounded-2xl p-4 text-white shadow-md">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-violet-200 mb-1">Overall Average</p>
+                                    <p className="text-4xl font-black leading-none">{overallStats.overall}%</p>
+                                    <p className="text-xs text-violet-200 mt-1">{overallStats.count} of {overallStats.total} subjects with marks</p>
+                                </div>
+                                <div className="text-right">
+                                    <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-1">
+                                        <span className="material-symbols-outlined text-3xl text-white">
+                                            {overallStats.overall >= 80 ? 'emoji_events' : overallStats.overall >= 60 ? 'trending_up' : 'school'}
+                                        </span>
+                                    </div>
+                                    <p className="text-[10px] text-violet-200 leading-tight max-w-[90px] text-right">Top: {overallStats.bestSubject}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Calendar View */}
                     {!isLoading && !error && (
                         <div className="relative">
@@ -495,7 +538,7 @@ const AssessmentsScreen: React.FC<AssessmentsScreenProps> = ({ student, onAssess
                     {!isLoading && !error && filteredSubjects.length > 0 && (
                         <div className="space-y-4">
                             <h2 className="text-lg font-bold text-gray-900 px-1 flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
                                 Subject Breakdown
                             </h2>
 

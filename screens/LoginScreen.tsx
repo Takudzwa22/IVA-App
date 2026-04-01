@@ -130,7 +130,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                 <div className="max-w-sm mx-auto">
                     <div className="text-center mb-8">
                         <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-                        <p className="text-gray-500">Please enter your details below</p>
+                        <p className="text-gray-500">Enter your school email to sign in</p>
+                        <p className="text-xs text-gray-400 mt-1">No password required</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">

@@ -63,16 +63,16 @@ const MarksScreen: React.FC<MarksScreenProps> = ({ assessment, onBack }) => {
     const color = gradeColors[getGradeColor()];
 
     return (
-        <div className="h-full bg-indigo-900 overflow-y-auto relative">
+        <div className="h-full bg-violet-950 overflow-y-auto relative">
             {/* Background Blobs */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-violet-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-indigo-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
             <div className="p-6 pb-24 max-w-2xl mx-auto relative z-10">
                 {/* Back Button */}
                 <button
                     onClick={onBack}
-                    className="flex items-center gap-2 text-indigo-200 hover:text-white mb-6 transition-colors group"
+                    className="flex items-center gap-2 text-violet-200 hover:text-white mb-6 transition-colors group"
                 >
                     <span className="material-symbols-outlined group-hover:-translate-x-1 transition-transform">arrow_back</span>
                     <span className="text-sm font-bold">Back to Assessments</span>
