@@ -5,6 +5,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { getCached, setCached } from '../cache/sessionCache';
 
 export interface DetailedScheduleItem {
     period_number: number;
@@ -51,12 +52,22 @@ export function useStudentTimetableAPI(
             return;
         }
 
+        const gradeStr = typeof grade === 'string' ? grade : grade.toString();
+        const cacheKey = `${studentNumber}-${gradeStr}`;
+
+        // Return immediately from session cache if available
+        const cached = getCached<TimetableData>('timetable', cacheKey);
+        if (cached) {
+            setTimetable(cached);
+            setIsLoading(false);
+            return;
+        }
+
         const fetchTimetable = async () => {
             setIsLoading(true);
             setError(null);
 
             try {
-                const gradeStr = typeof grade === 'string' ? grade : grade.toString();
                 const response = await fetch(
                     `/api/student/timetable?studentNumber=${studentNumber}&grade=${encodeURIComponent(gradeStr)}`
                 );
@@ -67,6 +78,7 @@ export function useStudentTimetableAPI(
                 }
 
                 const data = await response.json();
+                setCached('timetable', cacheKey, data);
                 setTimetable(data);
             } catch (err) {
                 console.error('[useTimetable] Error:', err);
