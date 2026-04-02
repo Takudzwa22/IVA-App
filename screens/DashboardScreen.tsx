@@ -301,8 +301,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
   // Fetch timetable data from API
   const { timetable, isLoading, error } = useStudentTimetableAPI(studentNumber, studentGrade);
 
+  // Fetch assessments for cycle/term info
+  const { currentCycle } = useStudentAssessmentsAPI(studentNumber ?? undefined, studentGrade);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [pivotDate, setPivotDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -395,6 +400,33 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
     ? `${student.first_name} ${student.last_name}`
     : 'Student';
 
+  // Compute "Cycle N · Week W" from currentCycle
+  const cycleLabel = useMemo(() => {
+    if (!currentCycle) return null;
+    const start = new Date(currentCycle.start_date);
+    const now = new Date();
+    const week = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    return `Cycle ${currentCycle.cycle} · Week ${week}`;
+  }, [currentCycle]);
+
+  // All unique subjects from timetable for search
+  const allSubjects = useMemo(() => {
+    if (!timetable) return [];
+    if (timetable.type === 'detailed') {
+      const seen = new Set<string>();
+      return Object.values(timetable.schedule).flat()
+        .filter(p => p.subject && !['Free', 'Break', 'Lunch', 'Assembly'].includes(p.subject))
+        .filter(p => { if (seen.has(p.subject)) return false; seen.add(p.subject); return true; });
+    }
+    return timetable.subjects.map((subject, idx) => ({ subject, period_number: idx + 1, start_time: '', end_time: '', code: '' }));
+  }, [timetable]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return allSubjects.slice(0, 6);
+    const q = searchQuery.toLowerCase();
+    return allSubjects.filter(s => s.subject.toLowerCase().includes(q));
+  }, [searchQuery, allSubjects]);
+
   return (
     <div className="flex flex-col h-full bg-indigo-900 overflow-hidden">
       {/* Dark Header Section */}
@@ -405,23 +437,38 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
 
         <header className="flex justify-between items-center mb-6 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center shrink-0">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-lg shadow-sm">
                 {student ? student.first_name.charAt(0) : '?'}
               </div>
             </div>
             <div>
               <p className="text-sm text-indigo-200">{getGreeting()},</p>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-2xl font-bold text-white leading-tight">
                 {isLoading ? (
                   <span className="inline-block w-32 h-6 bg-white/10 rounded animate-pulse" />
                 ) : displayName}
               </h1>
+              {cycleLabel && (
+                <p className="text-[11px] text-indigo-300 font-medium mt-0.5">{cycleLabel}</p>
+              )}
             </div>
           </div>
-          <button className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white"
+            >
+              <span className="material-symbols-outlined">search</span>
+            </button>
+            <button
+              onClick={onViewAnnouncements}
+              className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white relative"
+            >
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-400 border border-indigo-900" />
+            </button>
+          </div>
         </header>
 
         {/* Quick Stats Row */}
@@ -593,6 +640,61 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
           onClose={() => setSelectedSubject(null)}
           onAssessmentSelect={onAssessmentSelect}
         />
+      )}
+
+      {/* Search Modal */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-16 px-4"
+          onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+        >
+          <div
+            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+              <span className="material-symbols-outlined text-gray-400">search</span>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search subjects…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 text-base font-medium text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Results */}
+            <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+              {searchResults.length === 0 ? (
+                <div className="py-10 text-center text-gray-400 text-sm">No subjects found</div>
+              ) : (
+                searchResults.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedSubject(item.subject);
+                      setSearchOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getSubjectGradient(item.subject)} flex items-center justify-center shrink-0`}>
+                      <span className="material-symbols-outlined text-white text-base">{getSubjectIcon(item.subject)}</span>
+                    </div>
+                    <span className="font-semibold text-gray-900 text-sm">{item.subject}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
