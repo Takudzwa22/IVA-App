@@ -90,14 +90,6 @@ export function useStudentAssessmentsAPI(
         }
     }, [studentNumber, grade, selectedCycle]);
 
-    const refetchFresh = useCallback(() => {
-        if (studentNumber && grade) {
-            const cycleKey = selectedCycle ?? 'current';
-            invalidate('assessments', `${studentNumber}-${grade}-${cycleKey}`);
-        }
-        fetchAssessments(true);
-    }, [fetchAssessments, studentNumber, grade, selectedCycle]);
-
     useEffect(() => {
         fetchAssessments();
     }, [fetchAssessments]);
@@ -105,6 +97,14 @@ export function useStudentAssessmentsAPI(
     const handleSetSelectedCycle = useCallback((cycle: number) => {
         setSelectedCycle(cycle);
     }, []);
+
+    const refetchFresh = useCallback(() => {
+        if (studentNumber && grade) {
+            const cycleKey = selectedCycle ?? 'current';
+            invalidate('assessments', `${studentNumber}-${grade}-${cycleKey}`);
+        }
+        fetchAssessments(true);
+    }, [fetchAssessments, studentNumber, grade, selectedCycle]);
 
     return {
         currentCycle,
