@@ -33,7 +33,7 @@ const ROLE_ROUTES: Record<string, ('admin' | 'teacher' | 'student')[]> = {
   '/api/admin': ['admin'],
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({
     request,
   });

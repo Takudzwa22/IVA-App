@@ -125,7 +125,8 @@ export function SidebarWithAI({
     onOpenAI,
     isCollapsed,
     onCollapseChange,
-}: Omit<SidebarProps, 'footer'> & { onOpenAI?: () => void }) {
+    activeClass,
+}: Omit<SidebarProps, 'footer'> & { onOpenAI?: () => void; activeClass?: string }) {
     return (
         <aside
             className={`
@@ -188,7 +189,7 @@ export function SidebarWithAI({
               transition-all duration-200
               ${isCollapsed ? 'justify-center' : ''}
               ${item.isActive
-                                ? 'bg-primary/10 text-primary shadow-sm'
+                                ? `bg-gray-100 ${activeClass || 'text-primary'} shadow-sm`
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }
             `}

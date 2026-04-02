@@ -90,44 +90,34 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({ onBack, isTea
     };
 
     return (
-        <div className="h-full bg-indigo-900 overflow-y-auto relative animate-in slide-in-from-right duration-300">
+        <div className="h-full bg-orange-950 overflow-y-auto relative animate-in slide-in-from-right duration-300">
             {/* Background Blobs */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-amber-700 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
             <div className="p-6 pb-24 md:p-8 space-y-6 relative z-10">
                 {/* Header */}
                 <header className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-bold text-white">Announcements</h1>
-                        <p className="text-sm text-indigo-200">Latest updates from your school</p>
+                        <p className="text-sm text-orange-200">Latest updates from your school</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        {isTeacher && (
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-1"
-                            >
-                                <span className="material-symbols-outlined">add</span>
-                            </button>
-                        )}
-                        {onBack && (
-                            <button
-                                onClick={onBack}
-                                className="p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-colors"
-                            >
-                                <span className="material-symbols-outlined">close</span>
-                            </button>
-                        )}
-                    </div>
+                    {isTeacher && (
+                        <button
+                            onClick={() => setShowCreateModal(true)}
+                            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-1"
+                        >
+                            <span className="material-symbols-outlined">add</span>
+                        </button>
+                    )}
                 </header>
 
                 {/* Create Button for Teachers */}
                 {isTeacher && (
                     <button
                         onClick={() => setShowCreateModal(true)}
-                        className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:from-indigo-400 hover:to-purple-400 transition-all"
+                        className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg hover:from-orange-400 hover:to-amber-500 transition-all"
                     >
                         <span className="material-symbols-outlined">campaign</span>
                         Create Announcement
@@ -294,7 +284,7 @@ const AnnouncementsScreen: React.FC<AnnouncementsScreenProps> = ({ onBack, isTea
                                 <button
                                     onClick={handleCreateAnnouncement}
                                     disabled={isSaving || !formData.title.trim() || !formData.content.trim()}
-                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-orange-400 hover:to-amber-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isSaving ? (
                                         <>

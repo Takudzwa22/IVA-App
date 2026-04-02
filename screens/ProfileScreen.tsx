@@ -58,35 +58,31 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ student, teacher, onLogou
     : (student?.first_name?.charAt(0) || '?');
 
   return (
-    <div className="p-6">
-      <header className="flex items-center justify-between mb-8">
-        <div className="w-8" />
-        <h1 className="text-lg font-semibold text-gray-900">Profile</h1>
-        <div className="w-8" />
-      </header>
+    <div className="h-full bg-amber-950 overflow-y-auto relative">
+      {/* Background Blobs */}
+      <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-amber-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-yellow-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none" />
 
-      {/* Profile Header */}
-      <section className="flex flex-col items-center text-center mb-8">
-        <div className="relative mb-4 group">
-          <div className="w-28 h-28 rounded-3xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white text-4xl font-semibold shadow-lg border-4 border-white">
-            {initials}
-          </div>
+      {/* Colored Header Section */}
+      <div className="relative z-10 px-6 pt-10 pb-24 flex flex-col items-center text-center">
+        <p className="text-amber-300 text-sm font-medium mb-1 self-start">Account</p>
+        <div className="w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-sm border-2 border-white/30 flex items-center justify-center text-white text-4xl font-bold shadow-xl mb-4">
+          {initials}
         </div>
-
-        <h2 className="text-2xl font-semibold text-gray-900">{displayName}</h2>
+        <h1 className="text-2xl font-bold text-white">{displayName}</h1>
         {isTeacher ? (
-          <p className="text-sm text-gray-500 font-medium mt-1">
-            Teacher • {teacher?.Email}
-          </p>
+          <p className="text-amber-200 text-sm font-medium mt-1">{teacher?.Email}</p>
         ) : student ? (
-          <p className="text-sm text-gray-500 font-medium mt-1">
-            ID: {student.student_number} • Grade {student.grade}
+          <p className="text-amber-200 text-sm font-medium mt-1">
+            Grade {student.grade} · #{student.student_number}
           </p>
         ) : (
-          <p className="text-sm text-gray-500 font-medium mt-1">Please sign in to view your profile</p>
+          <p className="text-amber-200 text-sm font-medium mt-1">Please sign in to view your profile</p>
         )}
-      </section>
+      </div>
 
+      {/* White content card */}
+      <div className="relative z-10 bg-gray-50 rounded-t-3xl -mt-16 px-6 pb-24 pt-8">
       <div className="space-y-6">
         {/* Personal Information */}
         <div className="bg-white rounded-3xl p-6 shadow-subtle">
@@ -395,6 +391,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ student, teacher, onLogou
           </div>
         </div>
       )}
+      </div>{/* end white card */}
     </div>
   );
 };

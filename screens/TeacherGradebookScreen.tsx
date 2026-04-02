@@ -132,7 +132,7 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
 
     if (!assessment) {
         return (
-            <div className="h-full bg-indigo-900 flex items-center justify-center">
+            <div className="h-full bg-teal-950 flex items-center justify-center">
                 <p className="text-white">No assessment selected</p>
             </div>
         );
@@ -144,10 +144,10 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
     const gradedCount = students.filter(s => s.mark_obtained !== null).length;
 
     return (
-        <div className="h-full bg-indigo-900 overflow-y-auto relative">
+        <div className="h-full bg-teal-950 overflow-y-auto relative">
             {/* Background Blobs */}
-            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
-            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
+            <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-teal-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob pointer-events-none"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-emerald-800 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000 pointer-events-none"></div>
 
             <div className="px-6 py-6 pb-32 relative z-10">
                 {/* Header */}
@@ -160,7 +160,7 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                     </button>
                     <div className="flex-1">
                         <h1 className="text-xl font-bold text-white">{assessment.title}</h1>
-                        <p className="text-indigo-200 text-sm">{assessment.subject_name} • Grade 10</p>
+                        <p className="text-teal-200 text-sm">{assessment.subject_name} • Grade 10</p>
                     </div>
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
                         <span className="material-symbols-outlined text-white">{icon}</span>
@@ -171,15 +171,15 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                 <div className="grid grid-cols-3 gap-3 mb-6">
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
                         <p className="text-2xl font-bold text-white">{students.length}</p>
-                        <p className="text-xs text-indigo-200">Students</p>
+                        <p className="text-xs text-teal-200">Students</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
                         <p className="text-2xl font-bold text-white">{gradedCount}</p>
-                        <p className="text-xs text-indigo-200">Graded</p>
+                        <p className="text-xs text-teal-200">Graded</p>
                     </div>
                     <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/10">
                         <p className="text-2xl font-bold text-white">{assessment.max_marks}</p>
-                        <p className="text-xs text-indigo-200">Max Marks</p>
+                        <p className="text-xs text-teal-200">Max Marks</p>
                     </div>
                 </div>
 
@@ -315,7 +315,7 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                                 <button
                                     onClick={handleSaveMark}
                                     disabled={isSaving}
-                                    className="w-full py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-indigo-500 hover:to-purple-500 transition-all disabled:opacity-50"
+                                    className="w-full py-4 bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-bold rounded-2xl flex items-center justify-center gap-2 hover:from-teal-500 hover:to-emerald-500 transition-all disabled:opacity-50"
                                 >
                                     {isSaving ? (
                                         <>

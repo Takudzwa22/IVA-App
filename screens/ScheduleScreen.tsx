@@ -23,6 +23,15 @@ function formatTime(time: string): string {
 }
 
 // Get subject color style based on subject name
+function isTimeBetween(start: string, end: string): boolean {
+  if (!start || !end) return false;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const [sh, sm] = start.split(':').map(Number);
+  const [eh, em] = end.split(':').map(Number);
+  return nowMins >= sh * 60 + sm && nowMins < eh * 60 + em;
+}
+
 function getSubjectStyle(subject: string | undefined) {
   if (!subject || subject === 'Free') return { bg: 'bg-gray-100', text: 'text-gray-500', icon: 'pause', iconBg: 'bg-gray-200', iconColor: 'text-gray-500' };
 
@@ -52,7 +61,7 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
   const studentGrade = student?.grade;
 
   // Fetch timetable data from API
-  const { timetable, isLoading } = useStudentTimetableAPI(studentNumber, studentGrade);
+  const { timetable, isLoading, error: timetableError } = useStudentTimetableAPI(studentNumber, studentGrade);
 
   // Fetch attendance data from API
   const { records: attendanceRecords, summary: attendanceSummary, isLoading: attendanceLoading } = useStudentAttendanceAPI(studentNumber);
@@ -108,10 +117,30 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
   const handleNextDay = () => setSelectedDay(prev => (prev < 4 ? prev + 1 : 0));
 
   const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const currentDayNum = new Date().getDate(); // Simplified: assuming today is relevant for UI display context
+
+  // Compute real calendar dates for the current week's strip
+  // WEEKDAYS_SHORT = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] → idx 0=Sun, 1=Mon…6=Sat
+  const weekDates = useMemo(() => {
+    const today = new Date();
+    const dow = today.getDay(); // 0=Sun, 1=Mon…6=Sat
+    const monday = new Date(today);
+    monday.setDate(today.getDate() - (dow === 0 ? 6 : dow - 1));
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + (i - 1)); // i=0→Sun, i=1→Mon, …, i=6→Sat
+      return d.getDate();
+    });
+  }, []);
+
+  // Is the currently selected day today?
+  const isSelectedToday = useMemo(() => {
+    const todayDow = new Date().getDay(); // 0=Sun,1=Mon…6=Sat
+    if (todayDow === 0 || todayDow === 6) return false;
+    return selectedDay === todayDow - 1;
+  }, [selectedDay]);
 
   return (
-    <div className="flex flex-col h-full bg-indigo-900 overflow-hidden">
+    <div className="flex flex-col h-full bg-teal-950 overflow-hidden">
       {/* Dark Header Section */}
       <div className="pt-8 px-6 pb-4 shrink-0">
         <div className="flex items-center justify-between mb-8 text-white">
@@ -147,17 +176,15 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
                   onClick={() => !isWeekend && changeDay(idx - 1)}
                   disabled={isWeekend}
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${isSelected
-                    ? 'bg-indigo-500 text-white ring-4 ring-indigo-900 border border-indigo-400'
+                    ? 'bg-teal-500 text-white ring-4 ring-teal-950 border border-teal-400'
                     : isWeekend
                       ? 'text-white/20 cursor-default'
                       : 'text-white hover:bg-white/10'
                     }`}
                 >
-                  {/* Just mock dates relative to "17" for demo effect, or just show dots */}
-                  {/* Ideally we'd calculate actual dates, but for now just showing visual state */}
-                  {14 + idx}
+                  {weekDates[idx]}
                 </button>
-                {isSelected && <div className="w-1 h-1 rounded-full bg-indigo-400 mt-1" />}
+                {isSelected && <div className="w-1 h-1 rounded-full bg-teal-400 mt-1" />}
               </div>
             );
           })}
@@ -170,10 +197,10 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
         <div className="px-8 pt-8 pb-4 flex items-center justify-between shrink-0">
           <div>
             <p className="text-gray-500 text-sm font-medium mb-1">
-              {daySchedule.filter(i => i.subject).length} lessons
+              {!timetable ? '—' : daySchedule.filter(i => i.subject).length} lessons
             </p>
             <h2 className="text-2xl font-bold text-gray-900">
-              {WEEKDAYS[selectedDay]} {15 + selectedDay}
+              {WEEKDAYS[selectedDay]} {weekDates[selectedDay + 1]}
             </h2>
           </div>
           <div className="flex gap-2">
@@ -194,10 +221,17 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
                 <div key={i} className="h-32 bg-gray-100 rounded-3xl animate-pulse" />
               ))}
             </div>
+          ) : timetableError || !timetable ? (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400 pb-20">
+              <span className="material-symbols-outlined text-6xl mb-4 text-gray-200">calendar_today</span>
+              <p className="font-medium text-gray-600">No timetable found</p>
+              <p className="text-sm text-gray-400 mt-1">Your timetable hasn&apos;t been set up yet</p>
+            </div>
           ) : scheduleWithBreaks.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-gray-400 pb-20">
-              <span className="material-symbols-outlined text-6xl mb-4 text-gray-200">event_busy</span>
-              <p className="font-medium">No classes scheduled</p>
+              <span className="material-symbols-outlined text-6xl mb-4 text-gray-200">event_available</span>
+              <p className="font-medium text-gray-600">No classes today</p>
+              <p className="text-sm text-gray-400 mt-1">Nothing scheduled for {WEEKDAYS[selectedDay]}</p>
             </div>
           ) : (
             <div className="space-y-6 py-4">
@@ -257,11 +291,19 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
                             {style.icon}
                           </span>
                         </div>
-                        <div>
-                          <h3 className="font-bold text-lg leading-tight mb-1">{period.subject}</h3>
-                          <p className="opacity-90 text-sm font-medium mb-4">
-                            {period.subject === 'Free' ? 'Free Period' : 'Standard Grade Class'}
-                          </p>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-bold text-lg leading-tight">{period.subject}</h3>
+                            {isSelectedToday && isTimeBetween(period.start_time, period.end_time) && (
+                              <span className="flex items-center gap-1 bg-white/20 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide">
+                                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse inline-block" />
+                                Now
+                              </span>
+                            )}
+                          </div>
+                          {period.code && period.subject !== 'Free' && (
+                            <p className="opacity-75 text-xs font-medium mb-3">Period {period.code}</p>
+                          )}
 
                           <div className="flex items-center gap-2 opacity-80 text-xs font-medium">
                             <span className="material-symbols-outlined text-sm">schedule</span>
@@ -309,7 +351,7 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ student, onSubjectSelec
               ) : (
                 <>
                   {/* Summary Card */}
-                  <div className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-6 mb-6 text-white">
+                  <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl p-6 mb-6 text-white">
                     <div className="flex items-center gap-6">
                       {/* Percentage Ring */}
                       <div className="relative w-20 h-20 shrink-0">

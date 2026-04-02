@@ -10,7 +10,6 @@ import AssessmentsScreen from './screens/AssessmentsScreen';
 import SubjectGradesScreen from './screens/SubjectGradesScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 import ProfileScreen from './screens/ProfileScreen';
-import AIAssistantScreen from './screens/AIAssistantScreen';
 import AnnouncementsScreen from './screens/AnnouncementsScreen';
 import LoginScreen from './screens/LoginScreen';
 import MarksScreen from './screens/MarksScreen';
@@ -97,7 +96,6 @@ const AppContent: React.FC = () => {
     setCurrentScreen(Screen.TEACHER_ASSESSMENTS);
   };
 
-  const handleOpenAI = () => setCurrentScreen(Screen.AI_ASSISTANT);
   const handleViewAnnouncements = () => setCurrentScreen(Screen.ANNOUNCEMENTS);
 
   const handleLogin = (userData: { student?: Student; teacher?: Teacher }) => {
@@ -132,7 +130,7 @@ const AppContent: React.FC = () => {
           key: 'dashboard',
           label: 'Home',
           icon: 'dashboard',
-          isActive: currentScreen === Screen.TEACHER_DASHBOARD || currentScreen === Screen.AI_ASSISTANT,
+          isActive: currentScreen === Screen.TEACHER_DASHBOARD,
           onClick: () => setCurrentScreen(Screen.TEACHER_DASHBOARD),
         },
         {
@@ -165,7 +163,7 @@ const AppContent: React.FC = () => {
         key: 'dashboard',
         label: 'Home',
         icon: 'dashboard',
-        isActive: currentScreen === Screen.DASHBOARD || currentScreen === Screen.AI_ASSISTANT,
+        isActive: currentScreen === Screen.DASHBOARD,
         onClick: () => setCurrentScreen(Screen.DASHBOARD),
       },
       {
@@ -198,6 +196,26 @@ const AppContent: React.FC = () => {
       },
     ];
   }, [currentScreen, isTeacher]);
+
+  // Compute nav active color from current screen (matches per-page color theme)
+  const getNavActiveClass = (): string => {
+    switch (currentScreen) {
+      case Screen.SCHEDULE:
+      case Screen.TEACHER_GRADEBOOK:
+        return 'text-teal-500';
+      case Screen.GRADES:
+      case Screen.SUBJECT_GRADES:
+      case Screen.MARKS_DETAIL:
+      case Screen.TEACHER_ASSESSMENTS:
+        return 'text-violet-600';
+      case Screen.ANNOUNCEMENTS:
+        return 'text-orange-500';
+      case Screen.PROFILE:
+        return 'text-amber-500';
+      default:
+        return 'text-primary';
+    }
+  };
 
   // Show login screen if not authenticated
   if (!authState.isAuthenticated) {
@@ -242,8 +260,6 @@ const AppContent: React.FC = () => {
               teacherName={authState.teacher?.Name || authState.teacher?.['Full name'] || 'Teacher'}
             />
           );
-        case Screen.AI_ASSISTANT:
-          return <AIAssistantScreen onBack={() => setCurrentScreen(Screen.TEACHER_DASHBOARD)} />;
         default:
           return (
             <TeacherDashboardScreen
@@ -260,7 +276,6 @@ const AppContent: React.FC = () => {
         return (
           <DashboardScreen
             student={authState.student}
-            onOpenAI={handleOpenAI}
             onViewAnnouncements={handleViewAnnouncements}
             onAssessmentSelect={handleAssessmentSelect}
           />
@@ -299,28 +314,15 @@ const AppContent: React.FC = () => {
         return <ProfileScreen student={authState.student} onLogout={handleLogout} />;
       case Screen.ANNOUNCEMENTS:
         return <AnnouncementsScreen onBack={() => setCurrentScreen(Screen.DASHBOARD)} />;
-      case Screen.AI_ASSISTANT:
-        return <AIAssistantScreen onBack={() => setCurrentScreen(Screen.DASHBOARD)} />;
       default:
-        return <DashboardScreen student={authState.student} onOpenAI={handleOpenAI} onViewAnnouncements={handleViewAnnouncements} />;
+        return <DashboardScreen student={authState.student} onViewAnnouncements={handleViewAnnouncements} />;
     }
   };
-
-  // Floating AI button for mobile
-  const floatingAIButton = currentScreen !== Screen.AI_ASSISTANT ? (
-    <button
-      onClick={handleOpenAI}
-      className="w-14 h-14 bg-gradient-to-br from-primary to-secondary rounded-2xl text-white shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform"
-    >
-      <span className="material-symbols-outlined text-3xl fill">smart_toy</span>
-    </button>
-  ) : undefined;
 
   return (
     <ResponsiveLayout
       navItems={navItems}
-      floatingAIButton={floatingAIButton}
-      onOpenAI={currentScreen !== Screen.AI_ASSISTANT ? handleOpenAI : undefined}
+      navActiveClass={getNavActiveClass()}
     >
       {renderScreen()}
     </ResponsiveLayout>

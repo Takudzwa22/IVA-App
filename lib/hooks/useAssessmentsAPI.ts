@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { AssessmentCycle, SubjectAssessments } from '../../types';
+import { getCached, setCached, invalidate } from '../cache/sessionCache';
 
 interface UseStudentAssessmentsResult {
     currentCycle: AssessmentCycle | null;
@@ -25,10 +26,25 @@ export function useStudentAssessmentsAPI(
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const fetchAssessments = useCallback(async () => {
+    const fetchAssessments = useCallback(async (bust = false) => {
         if (!studentNumber || !grade) {
             setIsLoading(false);
             return;
+        }
+
+        const cycleKey = selectedCycle ?? 'current';
+        const cacheKey = `${studentNumber}-${grade}-${cycleKey}`;
+
+        // Return from session cache unless a forced refetch was requested
+        if (!bust) {
+            const cached = getCached<{ currentCycle: AssessmentCycle | null; cycles: AssessmentCycle[]; subjects: SubjectAssessments[] }>('assessments', cacheKey);
+            if (cached) {
+                setCurrentCycle(cached.currentCycle);
+                setCycles(cached.cycles);
+                setSubjects(cached.subjects);
+                setIsLoading(false);
+                return;
+            }
         }
 
         setIsLoading(true);
@@ -51,6 +67,12 @@ export function useStudentAssessmentsAPI(
                 setError(data.error || 'Failed to fetch assessments');
                 return;
             }
+
+            setCached('assessments', cacheKey, {
+                currentCycle: data.currentCycle,
+                cycles: data.cycles,
+                subjects: data.subjects,
+            });
 
             setCurrentCycle(data.currentCycle);
             setCycles(data.cycles);
@@ -76,6 +98,14 @@ export function useStudentAssessmentsAPI(
         setSelectedCycle(cycle);
     }, []);
 
+    const refetchFresh = useCallback(() => {
+        if (studentNumber && grade) {
+            const cycleKey = selectedCycle ?? 'current';
+            invalidate('assessments', `${studentNumber}-${grade}-${cycleKey}`);
+        }
+        fetchAssessments(true);
+    }, [fetchAssessments, studentNumber, grade, selectedCycle]);
+
     return {
         currentCycle,
         cycles,
@@ -84,6 +114,6 @@ export function useStudentAssessmentsAPI(
         setSelectedCycle: handleSetSelectedCycle,
         isLoading,
         error,
-        refetch: fetchAssessments,
+        refetch: refetchFresh,
     };
 }

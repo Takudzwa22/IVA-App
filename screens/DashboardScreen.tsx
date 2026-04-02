@@ -4,11 +4,9 @@ import React, { useState, useMemo } from 'react';
 import { useStudentTimetableAPI, useStudentAssessmentsAPI } from '../lib/hooks';
 import type { Student, AssessmentWithMark } from '../types';
 import type { DetailedScheduleItem } from '../lib/hooks/useTimetableAPI';
-import { mockAnnouncements } from '../lib/__fixtures__/mockData';
 
 interface DashboardScreenProps {
   student: Student | null;
-  onOpenAI: () => void;
   onViewAnnouncements: () => void;
   onAssessmentSelect?: (assessment: AssessmentWithMark & { subjectName: string }) => void;
 }
@@ -295,7 +293,7 @@ const UpcomingAssignments: React.FC<{
     );
   };
 
-const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, onViewAnnouncements, onAssessmentSelect }) => {
+const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnouncements, onAssessmentSelect }) => {
   // Use student from props (passed from login)
   const studentNumber = student?.student_number ?? null;
   const studentGrade = student?.grade;
@@ -303,9 +301,13 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
   // Fetch timetable data from API
   const { timetable, isLoading, error } = useStudentTimetableAPI(studentNumber, studentGrade);
 
+  // Fetch assessments for cycle/term info
+  const { currentCycle } = useStudentAssessmentsAPI(studentNumber ?? undefined, studentGrade);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [dismissedAnnouncements, setDismissedAnnouncements] = useState<Set<string>>(new Set());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [pivotDate, setPivotDate] = useState(() => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
@@ -378,9 +380,52 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
   const isToday = isSameDay(selectedDate, new Date());
   const isWeekend = selectedDate.getDay() === 0 || selectedDate.getDay() === 6;
 
+  // Find the next upcoming class on today's schedule
+  const nextClass = useMemo((): (DetailedScheduleItem & { minsUntil: number }) | null => {
+    if (!isToday || !timetable || timetable.type !== 'detailed') return null;
+    const now = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes();
+    const todayClasses = classes.filter(p => p.start_time);
+    for (const p of todayClasses) {
+      const [h, m] = p.start_time.split(':').map(Number);
+      const startMins = h * 60 + m;
+      if (startMins > nowMins) {
+        return { ...p, minsUntil: startMins - nowMins };
+      }
+    }
+    return null;
+  }, [classes, isToday, timetable]);
+
   const displayName = student
     ? `${student.first_name} ${student.last_name}`
     : 'Student';
+
+  // Compute "Cycle N · Week W" from currentCycle
+  const cycleLabel = useMemo(() => {
+    if (!currentCycle) return null;
+    const start = new Date(currentCycle.start_date);
+    const now = new Date();
+    const week = Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    return `Cycle ${currentCycle.cycle} · Week ${week}`;
+  }, [currentCycle]);
+
+  // All unique subjects from timetable for search
+  const allSubjects = useMemo(() => {
+    if (!timetable) return [];
+    if (timetable.type === 'detailed') {
+      const seen = new Set<string>();
+      return Object.values(timetable.schedule).flat()
+        .filter(p => p.subject && !['Free', 'Break', 'Lunch', 'Assembly'].includes(p.subject))
+        .filter(p => { if (seen.has(p.subject)) return false; seen.add(p.subject); return true; });
+    }
+    return timetable.subjects.map((subject, idx) => ({ subject, period_number: idx + 1, start_time: '', end_time: '', code: '' }));
+  }, [timetable]);
+
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return allSubjects.slice(0, 6);
+    const q = searchQuery.toLowerCase();
+    return allSubjects.filter(s => s.subject.toLowerCase().includes(q));
+  }, [searchQuery, allSubjects]);
 
   return (
     <div className="flex flex-col h-full bg-indigo-900 overflow-hidden">
@@ -392,23 +437,38 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
 
         <header className="flex justify-between items-center mb-6 relative z-10">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center shrink-0">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-lg shadow-sm">
                 {student ? student.first_name.charAt(0) : '?'}
               </div>
             </div>
             <div>
               <p className="text-sm text-indigo-200">{getGreeting()},</p>
-              <h1 className="text-2xl font-bold text-white">
+              <h1 className="text-2xl font-bold text-white leading-tight">
                 {isLoading ? (
                   <span className="inline-block w-32 h-6 bg-white/10 rounded animate-pulse" />
                 ) : displayName}
               </h1>
+              {cycleLabel && (
+                <p className="text-[11px] text-indigo-300 font-medium mt-0.5">{cycleLabel}</p>
+              )}
             </div>
           </div>
-          <button className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white"
+            >
+              <span className="material-symbols-outlined">search</span>
+            </button>
+            <button
+              onClick={onViewAnnouncements}
+              className="w-10 h-10 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors text-white relative"
+            >
+              <span className="material-symbols-outlined">notifications</span>
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-400 border border-indigo-900" />
+            </button>
+          </div>
         </header>
 
         {/* Quick Stats Row */}
@@ -479,69 +539,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
       {/* Main Content Area - Purple Background */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32 space-y-6 relative z-10">
 
-        {/* Announcements Section - First */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-white flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
-              Announcements
-            </h2>
-            <button
-              onClick={onViewAnnouncements}
-              className="text-xs font-bold text-white/80 hover:text-white bg-white/10 px-2.5 py-1 rounded-lg transition-colors border border-white/20"
-            >
-              VIEW ALL
-            </button>
-          </div>
-
-          <div className="bg-white rounded-3xl p-4 shadow-lg space-y-3">
-            {mockAnnouncements
-              .filter(a => !dismissedAnnouncements.has(a.id))
-              .slice(0, 2)
-              .map(announcement => (
-                <div
-                  key={announcement.id}
-                  className="bg-white p-5 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group relative overflow-hidden"
-                  onClick={onViewAnnouncements}
-                >
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-orange-400 to-red-500"></div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDismissedAnnouncements(prev => new Set(Array.from(prev).concat(announcement.id)));
-                    }}
-                    className="absolute top-2 right-2 p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Dismiss"
-                  >
-                    <span className="material-symbols-outlined text-sm">close</span>
-                  </button>
-                  <div className="flex justify-between items-start mb-2 pl-2 pr-6">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
-                      {new Date(announcement.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${announcement.priority === 'high' ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
-                      }`}>
-                      {announcement.category}
-                    </span>
-                  </div>
-                  <h3 className="font-bold text-gray-900 text-base mb-1 group-hover:text-orange-600 transition-colors pl-2">
-                    {announcement.title}
-                  </h3>
-                  <p className="text-sm text-gray-500 line-clamp-1 font-medium pl-2">
-                    {announcement.content}
-                  </p>
-                </div>
-              ))}
-            {mockAnnouncements.filter(a => !dismissedAnnouncements.has(a.id)).length === 0 && (
-              <div className="text-center py-6 text-gray-400">
-                <span className="material-symbols-outlined text-3xl mb-2">notifications_off</span>
-                <p className="text-sm font-medium">All caught up!</p>
-              </div>
-            )}
-          </div>
-        </section>
-
-        {/* Classes Section - Second */}
+        {/* Classes Section */}
         <section>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
@@ -600,6 +598,27 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
               </div>
             )}
           </div>
+
+          {/* Next class chip — only on today's weekday when there's a future class */}
+          {nextClass && (
+            <div className="mt-3 flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/10">
+              <div className="w-8 h-8 rounded-full bg-indigo-400/30 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-indigo-200 text-base">arrow_forward</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] text-indigo-300 font-semibold uppercase tracking-wider">Next class</p>
+                <p className="text-sm font-bold text-white truncate">{nextClass.subject}</p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-xs font-bold text-indigo-200">
+                  {nextClass.minsUntil < 60
+                    ? `${nextClass.minsUntil}m`
+                    : `${Math.floor(nextClass.minsUntil / 60)}h ${nextClass.minsUntil % 60}m`}
+                </p>
+                <p className="text-[10px] text-indigo-300">{formatTime(nextClass.start_time)}</p>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Upcoming Assignments - Third */}
@@ -621,6 +640,61 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onOpenAI, on
           onClose={() => setSelectedSubject(null)}
           onAssessmentSelect={onAssessmentSelect}
         />
+      )}
+
+      {/* Search Modal */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-16 px-4"
+          onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
+        >
+          <div
+            className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Search Input */}
+            <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
+              <span className="material-symbols-outlined text-gray-400">search</span>
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search subjects…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 text-base font-medium text-gray-900 placeholder-gray-400 outline-none bg-transparent"
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery('')} className="text-gray-400 hover:text-gray-600">
+                  <span className="material-symbols-outlined text-xl">close</span>
+                </button>
+              )}
+            </div>
+
+            {/* Results */}
+            <div className="max-h-80 overflow-y-auto divide-y divide-gray-50">
+              {searchResults.length === 0 ? (
+                <div className="py-10 text-center text-gray-400 text-sm">No subjects found</div>
+              ) : (
+                searchResults.map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setSelectedSubject(item.subject);
+                      setSearchOpen(false);
+                      setSearchQuery('');
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${getSubjectGradient(item.subject)} flex items-center justify-center shrink-0`}>
+                      <span className="material-symbols-outlined text-white text-base">{getSubjectIcon(item.subject)}</span>
+                    </div>
+                    <span className="font-semibold text-gray-900 text-sm">{item.subject}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
