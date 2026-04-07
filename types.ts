@@ -18,6 +18,7 @@ export enum Screen {
   SUBJECT_GRADES = 'subject_grades',
   ANNOUNCEMENTS = 'announcements',
   MARKS_DETAIL = 'marks_detail',
+  ATTENDANCE = 'attendance',
   // Teacher screens
   TEACHER_DASHBOARD = 'teacher_dashboard',
   TEACHER_ASSESSMENTS = 'teacher_assessments',

@@ -11,6 +11,7 @@ import SubjectGradesScreen from './screens/SubjectGradesScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AnnouncementsScreen from './screens/AnnouncementsScreen';
+import AttendanceScreen from './screens/AttendanceScreen';
 import LoginScreen from './screens/LoginScreen';
 import MarksScreen from './screens/MarksScreen';
 // Teacher screens
@@ -141,6 +142,13 @@ const AppContent: React.FC = () => {
           onClick: () => setCurrentScreen(Screen.TEACHER_ASSESSMENTS),
         },
         {
+          key: 'attendance',
+          label: 'Attendance',
+          icon: 'fact_check',
+          isActive: currentScreen === Screen.ATTENDANCE,
+          onClick: () => setCurrentScreen(Screen.ATTENDANCE),
+        },
+        {
           key: 'announcements',
           label: 'News',
           icon: 'campaign',
@@ -252,6 +260,8 @@ const AppContent: React.FC = () => {
           );
         case Screen.PROFILE:
           return <ProfileScreen student={null} teacher={authState.teacher} onLogout={handleLogout} />;
+        case Screen.ATTENDANCE:
+          return <AttendanceScreen />;
         case Screen.ANNOUNCEMENTS:
           return (
             <AnnouncementsScreen
