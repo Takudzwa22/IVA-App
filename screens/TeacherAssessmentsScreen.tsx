@@ -20,6 +20,7 @@ interface AssessmentFormData {
     weighting: number | null;
     is_test: boolean;
     cycle: number;
+    grade: number;
 }
 
 const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
@@ -43,7 +44,8 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
         max_marks: 100,
         weighting: 0.25,
         is_test: false,
-        cycle: 1
+        cycle: 1,
+        grade: 10
     });
 
     useEffect(() => {
@@ -86,7 +88,8 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
             max_marks: 100,
             weighting: 0.25,
             is_test: false,
-            cycle: 1
+            cycle: 1,
+            grade: 10
         });
         setShowModal(true);
     };
@@ -101,7 +104,8 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
             max_marks: assessment.max_marks,
             weighting: assessment.weighting,
             is_test: assessment.is_test,
-            cycle: assessment.cycle
+            cycle: assessment.cycle,
+            grade: assessment.grade ?? 10
         });
         setShowModal(true);
     };
@@ -177,7 +181,9 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                     </button>
                     <div className="flex-1">
                         <h1 className="text-2xl font-bold text-white">{selectedSubject || 'All Assessments'}</h1>
-                        <p className="text-violet-200 text-sm">Grade 10</p>
+                        <p className="text-violet-200 text-sm">
+                            {assessments.length > 0 ? `Grade ${assessments[0].grade}` : 'Select grade when creating'}
+                        </p>
                     </div>
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shadow-lg`}>
                         <span className="material-symbols-outlined text-white">{icon}</span>
@@ -352,18 +358,32 @@ const TeacherAssessmentsScreen: React.FC<TeacherAssessmentsScreenProps> = ({
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Cycle</label>
-                                    <select
-                                        value={formData.cycle}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, cycle: parseInt(e.target.value) }))}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
-                                    >
-                                        <option value={1}>Cycle 1</option>
-                                        <option value={2}>Cycle 2</option>
-                                        <option value={3}>Cycle 3</option>
-                                        <option value={4}>Cycle 4</option>
-                                    </select>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Cycle</label>
+                                        <select
+                                            value={formData.cycle}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, cycle: parseInt(e.target.value) }))}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                        >
+                                            <option value={1}>Cycle 1</option>
+                                            <option value={2}>Cycle 2</option>
+                                            <option value={3}>Cycle 3</option>
+                                            <option value={4}>Cycle 4</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Grade</label>
+                                        <select
+                                            value={formData.grade}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, grade: parseInt(e.target.value) }))}
+                                            className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                                        >
+                                            {[4, 5, 6, 7, 8, 9, 10, 11, 12].map(g => (
+                                                <option key={g} value={g}>Grade {g}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="flex items-center gap-3 py-2">

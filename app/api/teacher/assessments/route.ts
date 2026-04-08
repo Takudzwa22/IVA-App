@@ -16,6 +16,7 @@ interface Assessment {
     weighting: number | null;
     is_test: boolean;
     cycle: number;
+    grade: number;
 }
 
 // GET - Fetch assessments for a teacher
@@ -97,11 +98,11 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { subject_name, teacher_email, title, due_date, max_marks, weighting, is_test, cycle } = body;
+        const { subject_name, teacher_email, title, due_date, max_marks, weighting, is_test, cycle, grade } = body;
 
-        if (!subject_name || !teacher_email || !title || !due_date || !cycle) {
+        if (!subject_name || !teacher_email || !title || !due_date || !cycle || !grade) {
             return NextResponse.json(
-                { error: 'Missing required fields: subject_name, teacher_email, title, due_date, cycle' },
+                { error: 'Missing required fields: subject_name, teacher_email, title, due_date, cycle, grade' },
                 { status: 400 }
             );
         }
@@ -116,7 +117,8 @@ export async function POST(request: NextRequest) {
                 max_marks: max_marks || null,
                 weighting: weighting || null,
                 is_test: is_test || false,
-                cycle
+                cycle,
+                grade
             })
             .select()
             .single();
@@ -146,7 +148,7 @@ export async function PUT(request: NextRequest) {
 
     try {
         const body = await request.json();
-        const { id, subject_name, title, due_date, max_marks, weighting, is_test, cycle } = body;
+        const { id, subject_name, title, due_date, max_marks, weighting, is_test, cycle, grade } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'Missing required field: id' }, { status: 400 });
@@ -161,7 +163,8 @@ export async function PUT(request: NextRequest) {
                 max_marks,
                 weighting,
                 is_test,
-                cycle
+                cycle,
+                grade
             })
             .eq('id', id)
             .select()

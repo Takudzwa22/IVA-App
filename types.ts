@@ -354,6 +354,7 @@ export interface Assessment {
   weighting: number | null;
   is_test: boolean;
   cycle: number;
+  grade: number;
 }
 
 /**

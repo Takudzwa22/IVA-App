@@ -19,6 +19,7 @@ interface StudentMark {
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const assessmentId = searchParams.get('assessmentId');
+    const gradeParam = searchParams.get('grade');
 
     if (!assessmentId) {
         return NextResponse.json(
@@ -42,9 +43,11 @@ export async function GET(request: NextRequest) {
     });
 
     try {
-        // Get students from grade_10_students and their marks
+        // Get students from the appropriate grade table
+        const grade = gradeParam ? parseInt(gradeParam, 10) : 10;
+        const gradeTable = `grade_${grade}_students`;
         const { data: students, error: studentsError } = await supabase
-            .from('grade_10_students')
+            .from(gradeTable)
             .select('"Number", "Full Name", "Name", "Surname"')
             .order('"Surname"', { ascending: true });
 

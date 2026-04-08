@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Teacher, Assessment } from '../types';
 import { getSubjectIcon, getSubjectGradient } from '../lib/subjects';
 
@@ -32,6 +32,9 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
     const [commentValue, setCommentValue] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
     const [isPublishing, setIsPublishing] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadResult, setUploadResult] = useState<{ uploaded: number; skipped: number[]; errors: string[] } | null>(null);
+    const csvInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (!assessment?.id) return;
@@ -43,7 +46,8 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
 
         setIsLoading(true);
         try {
-            const response = await fetch(`/api/teacher/marks?assessmentId=${assessment.id}`);
+            const grade = assessment.grade ?? 10;
+            const response = await fetch(`/api/teacher/marks?assessmentId=${assessment.id}&grade=${grade}`);
             const data = await response.json();
 
             if (!response.ok) {
@@ -130,6 +134,41 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
         }
     };
 
+    const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !assessment?.id) return;
+
+        setIsUploading(true);
+        setUploadResult(null);
+
+        try {
+            const formData = new FormData();
+            formData.append('assessment_id', assessment.id);
+            formData.append('grade', String(assessment.grade ?? 10));
+            formData.append('csv', file);
+
+            const response = await fetch('/api/teacher/marks/upload', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setUploadResult({ uploaded: 0, skipped: [], errors: [data.error || 'Upload failed'] });
+            } else {
+                setUploadResult(data);
+                await fetchStudents();
+            }
+        } catch {
+            setUploadResult({ uploaded: 0, skipped: [], errors: ['Unexpected error during upload'] });
+        } finally {
+            setIsUploading(false);
+            // Reset file input so same file can be re-uploaded
+            if (csvInputRef.current) csvInputRef.current.value = '';
+        }
+    };
+
     if (!assessment) {
         return (
             <div className="h-full bg-teal-950 flex items-center justify-center">
@@ -183,27 +222,71 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                     </div>
                 </div>
 
-                {/* Publish Button */}
-                <button
-                    onClick={() => handlePublishAll(!allPublished)}
-                    disabled={isPublishing || gradedCount === 0}
-                    className={`w-full py-4 rounded-2xl mb-6 font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 ${allPublished
-                            ? 'bg-amber-500 text-white hover:bg-amber-600'
-                            : 'bg-green-500 text-white hover:bg-green-600'
-                        }`}
-                >
-                    {isPublishing ? (
-                        <>
-                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                            {allPublished ? 'Unpublishing...' : 'Publishing...'}
-                        </>
-                    ) : (
-                        <>
-                            <span className="material-symbols-outlined">{allPublished ? 'visibility_off' : 'publish'}</span>
-                            {allPublished ? 'Unpublish All Marks' : 'Publish All Marks'}
-                        </>
-                    )}
-                </button>
+                {/* CSV Upload */}
+                <input
+                    ref={csvInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={handleCsvUpload}
+                />
+                <div className="flex gap-3 mb-4">
+                    <button
+                        onClick={() => csvInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="flex-1 py-3 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all disabled:opacity-50"
+                    >
+                        {isUploading ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                Uploading...
+                            </>
+                        ) : (
+                            <>
+                                <span className="material-symbols-outlined">upload_file</span>
+                                Upload CSV
+                            </>
+                        )}
+                    </button>
+                    <button
+                        onClick={() => handlePublishAll(!allPublished)}
+                        disabled={isPublishing || gradedCount === 0}
+                        className={`flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 ${allPublished
+                                ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                : 'bg-green-500 text-white hover:bg-green-600'
+                            }`}
+                    >
+                        {isPublishing ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                {allPublished ? 'Unpublishing...' : 'Publishing...'}
+                            </>
+                        ) : (
+                            <>
+                                <span className="material-symbols-outlined">{allPublished ? 'visibility_off' : 'publish'}</span>
+                                {allPublished ? 'Unpublish' : 'Publish All'}
+                            </>
+                        )}
+                    </button>
+                </div>
+
+                {/* CSV Upload tip */}
+                <p className="text-xs text-teal-300 mb-4 text-center">
+                    CSV format: <span className="font-mono bg-white/10 px-1 rounded">student_num,mark</span> (optional 3rd column: comments)
+                </p>
+
+                {/* Upload result */}
+                {uploadResult && (
+                    <div className={`rounded-2xl p-4 mb-4 text-sm ${uploadResult.errors.length > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                        <p className="font-semibold">{uploadResult.uploaded} mark{uploadResult.uploaded !== 1 ? 's' : ''} uploaded</p>
+                        {uploadResult.skipped.length > 0 && (
+                            <p className="mt-1 text-xs">Skipped (not in grade): {uploadResult.skipped.join(', ')}</p>
+                        )}
+                        {uploadResult.errors.map((e, i) => (
+                            <p key={i} className="mt-1 text-xs">{e}</p>
+                        ))}
+                    </div>
+                )}
 
                 {/* Students List */}
                 {isLoading ? (
