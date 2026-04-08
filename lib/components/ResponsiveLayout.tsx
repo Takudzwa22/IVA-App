@@ -25,10 +25,10 @@ interface MobileLayoutProps {
  */
 export function MobileLayout({ children, navItems, navActiveClass }: MobileLayoutProps) {
     return (
-        <div className="min-h-screen bg-background">
-            <div className="w-full min-h-screen bg-background relative">
-                {/* Content area with bottom nav padding */}
-                <div className="pb-24 overflow-y-auto min-h-screen scroll-smooth">
+        <div className="h-screen bg-background">
+            <div className="w-full h-full bg-background relative">
+                {/* Content area — fixed height so h-full children resolve correctly */}
+                <div className="h-full overflow-y-auto pb-24 scroll-smooth">
                     {children}
                 </div>
 
@@ -97,11 +97,10 @@ export function DesktopLayout({ children, navItems, sidebarHeader, navActiveClas
                 style={{ marginLeft: contentMargin }}
             >
                 {/* Content wrapper with padding */}
-                <div className="p-4 lg:p-6">
-                    {/* Content Card */}
-                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 min-h-[calc(100vh-2rem)] lg:min-h-[calc(100vh-3rem)]">
-                        {/* Removed inner padding to avoid double padding */}
-                        <div>
+                <div className="p-4 lg:p-6 h-full">
+                    {/* Content Card — explicit height so h-full children fill it; overflow-hidden clips dark bg to rounded corners */}
+                    <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/50 h-[calc(100vh-2rem)] lg:h-[calc(100vh-3rem)] overflow-hidden">
+                        <div className="h-full">
                             {children}
                         </div>
                     </div>
