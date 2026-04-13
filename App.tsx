@@ -7,7 +7,6 @@ import { ResponsiveLayout } from './lib/components/ResponsiveLayout';
 import type { NavItem } from './lib/components/Sidebar';
 import DashboardScreen from './screens/DashboardScreen';
 import AssessmentsScreen from './screens/AssessmentsScreen';
-import SubjectGradesScreen from './screens/SubjectGradesScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AnnouncementsScreen from './screens/AnnouncementsScreen';
@@ -46,7 +45,6 @@ const AppContent: React.FC = () => {
   });
 
   const [currentScreen, setCurrentScreen] = useState<Screen>(Screen.DASHBOARD);
-  const [selectedSubject, setSelectedSubject] = useState<SubjectInfo | null>(null);
   const [selectedAssessment, setSelectedAssessment] = useState<SelectedAssessment | null>(null);
 
   // Teacher-specific state
@@ -55,13 +53,8 @@ const AppContent: React.FC = () => {
 
   const isTeacher = authState.teacher !== null;
 
-  const handleSubjectSelect = (subject: SubjectInfo) => {
-    setSelectedSubject(subject);
-    setCurrentScreen(Screen.SUBJECT_GRADES);
-  };
-
-  const handleBackFromSubject = () => {
-    setSelectedSubject(null);
+  const handleSubjectSelect = (_subject: SubjectInfo) => {
+    // Navigate directly to the real Grades page instead of the placeholder SubjectGradesScreen
     setCurrentScreen(Screen.GRADES);
   };
 
@@ -298,9 +291,7 @@ const AppContent: React.FC = () => {
           />
         );
       case Screen.SUBJECT_GRADES:
-        return selectedSubject ? (
-          <SubjectGradesScreen subject={selectedSubject} onBack={handleBackFromSubject} />
-        ) : (
+        return (
           <AssessmentsScreen
             student={authState.student}
             onAssessmentSelect={handleAssessmentSelect}

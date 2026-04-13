@@ -62,11 +62,11 @@ const SubjectDetailModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4"
+      className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[80vh] overflow-hidden shadow-2xl"
+        className="bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] min-h-[50vh] overflow-hidden shadow-2xl animate-in slide-in-from-bottom duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -91,7 +91,7 @@ const SubjectDetailModal: React.FC<{
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+        <div className="p-6 overflow-y-auto max-h-[75vh]">
           {isLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map(i => (
