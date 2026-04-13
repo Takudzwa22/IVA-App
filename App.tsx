@@ -265,9 +265,8 @@ const AppContent: React.FC = () => {
         case Screen.ANNOUNCEMENTS:
           return (
             <AnnouncementsScreen
-              onBack={() => setCurrentScreen(Screen.TEACHER_DASHBOARD)}
               isTeacher={true}
-              teacherName={authState.teacher?.Name || authState.teacher?.['Full name'] || 'Teacher'}
+              teacher={authState.teacher}
             />
           );
         default:
@@ -287,6 +286,7 @@ const AppContent: React.FC = () => {
           <DashboardScreen
             student={authState.student}
             onViewAnnouncements={handleViewAnnouncements}
+            onViewGrades={() => setCurrentScreen(Screen.GRADES)}
             onAssessmentSelect={handleAssessmentSelect}
           />
         );
@@ -323,7 +323,7 @@ const AppContent: React.FC = () => {
       case Screen.PROFILE:
         return <ProfileScreen student={authState.student} onLogout={handleLogout} />;
       case Screen.ANNOUNCEMENTS:
-        return <AnnouncementsScreen onBack={() => setCurrentScreen(Screen.DASHBOARD)} />;
+        return <AnnouncementsScreen student={authState.student} />;
       default:
         return <DashboardScreen student={authState.student} onViewAnnouncements={handleViewAnnouncements} />;
     }

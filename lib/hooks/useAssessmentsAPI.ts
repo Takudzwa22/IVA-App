@@ -9,7 +9,7 @@ interface UseStudentAssessmentsResult {
     cycles: AssessmentCycle[];
     subjects: SubjectAssessments[];
     selectedCycle: number | null;
-    setSelectedCycle: (cycle: number) => void;
+    setSelectedCycle: (cycle: number | null) => void;
     isLoading: boolean;
     error: string | null;
     refetch: () => void;
@@ -22,7 +22,7 @@ export function useStudentAssessmentsAPI(
     const [currentCycle, setCurrentCycle] = useState<AssessmentCycle | null>(null);
     const [cycles, setCycles] = useState<AssessmentCycle[]>([]);
     const [subjects, setSubjects] = useState<SubjectAssessments[]>([]);
-    const [selectedCycle, setSelectedCycle] = useState<number | null>(null);
+    const [selectedCycle, setSelectedCycle] = useState<number | null>(-1);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -57,7 +57,7 @@ export function useStudentAssessmentsAPI(
             });
 
             if (selectedCycle !== null) {
-                params.append('cycle', selectedCycle.toString());
+                params.append('cycle', selectedCycle === -1 ? 'all' : selectedCycle.toString());
             }
 
             const response = await fetch(`/api/student/assessments?${params}`);
@@ -94,7 +94,7 @@ export function useStudentAssessmentsAPI(
         fetchAssessments();
     }, [fetchAssessments]);
 
-    const handleSetSelectedCycle = useCallback((cycle: number) => {
+    const handleSetSelectedCycle = useCallback((cycle: number | null) => {
         setSelectedCycle(cycle);
     }, []);
 

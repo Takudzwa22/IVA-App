@@ -8,6 +8,7 @@ import type { DetailedScheduleItem } from '../lib/hooks/useTimetableAPI';
 interface DashboardScreenProps {
   student: Student | null;
   onViewAnnouncements: () => void;
+  onViewGrades?: () => void;
   onAssessmentSelect?: (assessment: AssessmentWithMark & { subjectName: string }) => void;
 }
 
@@ -293,7 +294,7 @@ const UpcomingAssignments: React.FC<{
     );
   };
 
-const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnouncements, onAssessmentSelect }) => {
+const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnouncements, onViewGrades, onAssessmentSelect }) => {
   // Use student from props (passed from login)
   const studentNumber = student?.student_number ?? null;
   const studentGrade = student?.grade;
@@ -301,8 +302,31 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
   // Fetch timetable data from API
   const { timetable, isLoading, error } = useStudentTimetableAPI(studentNumber, studentGrade);
 
-  // Fetch assessments for cycle/term info
-  const { currentCycle } = useStudentAssessmentsAPI(studentNumber ?? undefined, studentGrade);
+  // Fetch assessments for cycle/term info + published marks count
+  const { currentCycle, subjects: assessmentSubjects } = useStudentAssessmentsAPI(studentNumber ?? undefined, studentGrade);
+  const publishedMarksCount = useMemo(() => {
+    return (assessmentSubjects || []).reduce((count, s) =>
+      count + s.assessments.filter(a => a.mark?.isPublished && a.mark.obtained !== null).length, 0);
+  }, [assessmentSubjects]);
+
+  // Persist banner dismissal in localStorage — reappears only when new marks are released
+  const marksBannerKey = `marks-banner-dismissed-${studentNumber}`;
+  const [dismissedMarksBanner, setDismissedMarksBanner] = useState(() => {
+    if (typeof window === 'undefined' || !studentNumber) return false;
+    const dismissed = localStorage.getItem(marksBannerKey);
+    return dismissed === String(publishedMarksCount);
+  });
+  // Re-check when publishedMarksCount loads (it starts at 0)
+  React.useEffect(() => {
+    if (!studentNumber || publishedMarksCount === 0) return;
+    const dismissed = localStorage.getItem(marksBannerKey);
+    setDismissedMarksBanner(dismissed === String(publishedMarksCount));
+  }, [publishedMarksCount, marksBannerKey, studentNumber]);
+
+  const handleDismissMarksBanner = () => {
+    setDismissedMarksBanner(true);
+    localStorage.setItem(marksBannerKey, String(publishedMarksCount));
+  };
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -539,6 +563,26 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
       {/* Main Content Area - Purple Background */}
       <div className="flex-1 overflow-y-auto px-6 py-6 pb-32 space-y-6 relative z-10">
 
+        {/* Marks Released Banner */}
+        {!dismissedMarksBanner && publishedMarksCount > 0 && (
+          <button
+            onClick={() => { handleDismissMarksBanner(); onViewGrades?.(); }}
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-4 shadow-lg flex items-center gap-3 text-left active:scale-[0.98] transition-transform"
+          >
+            <div className="w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-white text-2xl">celebration</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-white font-bold text-sm">Marks Released!</p>
+              <p className="text-emerald-100 text-xs">{publishedMarksCount} mark{publishedMarksCount > 1 ? 's' : ''} available for this cycle</p>
+            </div>
+            <div className="flex items-center gap-1 bg-white/20 rounded-xl px-3 py-1.5 shrink-0">
+              <span className="text-white text-xs font-semibold">View</span>
+              <span className="material-symbols-outlined text-white text-sm">arrow_forward</span>
+            </div>
+          </button>
+        )}
+
         {/* Classes Section */}
         <section>
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
@@ -560,17 +604,17 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
                 ))}
               </div>
             ) : isWeekend ? (
-              <div className="bg-white/20 p-8 rounded-2xl text-center">
-                <span className="material-symbols-outlined text-4xl text-white/50 mb-4">weekend</span>
-                <p className="text-white font-medium">No classes on weekends</p>
-                <p className="text-sm text-white/60 mt-1">Enjoy your time off!</p>
+              <div className="p-8 rounded-2xl text-center">
+                <span className="material-symbols-outlined text-5xl text-indigo-300 mb-3 block">weekend</span>
+                <p className="text-gray-800 font-semibold text-base">Enjoy your weekend!</p>
+                <p className="text-sm text-gray-400 mt-1">No classes on {selectedDate.toLocaleDateString('en-US', { weekday: 'long' })}s</p>
               </div>
             ) : classes.length === 0 ? (
-              <div className="bg-white/20 p-8 rounded-2xl text-center">
-                <span className="material-symbols-outlined text-4xl text-white/50 mb-4">event_busy</span>
-                <p className="text-white font-medium">No classes scheduled</p>
-                <p className="text-sm text-white/60 mt-1">
-                  {timetable ? 'All periods are free' : 'Timetable not yet assigned'}
+              <div className="p-8 rounded-2xl text-center">
+                <span className="material-symbols-outlined text-5xl text-gray-300 mb-3 block">event_busy</span>
+                <p className="text-gray-700 font-semibold text-base">No classes scheduled</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  {timetable ? 'All periods are free today' : 'Timetable not yet assigned'}
                 </p>
               </div>
             ) : (

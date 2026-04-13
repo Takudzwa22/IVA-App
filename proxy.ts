@@ -24,6 +24,9 @@ const PUBLIC_ROUTES = [
   '/api/teacher/subjects', // Teacher subjects data
   '/api/teacher/assessments', // Teacher assessments CRUD
   '/api/teacher/marks', // Teacher marks/grading
+  '/api/teacher/marks/upload', // Teacher XLSX mark upload
+  '/api/teacher/classes', // Teacher classes data
+  '/api/announcements', // School announcements
 ];
 
 // Routes that require specific roles
@@ -78,7 +81,7 @@ export async function proxy(request: NextRequest) {
 
   // Check if route is public
   const isPublicRoute = PUBLIC_ROUTES.some(route =>
-    pathname === route || pathname.startsWith('/api/public')
+    pathname === route || pathname.startsWith(route + '/') || pathname.startsWith('/api/public')
   );
 
   if (isPublicRoute) {

@@ -318,11 +318,16 @@ export interface Announcement {
   id: string;
   title: string;
   content: string;
-  date: string;
-  author: string;
   category: 'general' | 'academic' | 'sports' | 'events';
-  priority?: 'high' | 'normal' | 'low';
-  target_grades?: number[]; // e.g., [8, 9, 10] or empty for all grades
+  priority: 'high' | 'normal' | 'low';
+  target_grades: number[] | null;       // e.g., [8, 9, 10] or null for all
+  target_subjects: string[] | null;     // e.g., ["Mathematics"] or null for all
+  author_email: string;
+  author_name: string;
+  author_role: 'teacher' | 'admin' | 'headofschool';
+  created_at: string;
+  expires_at: string | null;            // null = never expires
+  is_active: boolean;
 }
 
 // ============================================================================
@@ -398,6 +403,7 @@ export interface SubjectAssessments {
   subjectName: string;
   subjectId: string;
   timetableAliases: string[];
+  teacherName?: string | null;
   assessments: AssessmentWithMark[];
 }
 

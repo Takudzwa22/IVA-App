@@ -1,4 +1,3 @@
-'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -6,13 +5,10 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-interface TeacherSubject {
-    subject_name: string;
-}
-
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const teacherEmail = searchParams.get('email');
+    // Note: searchParams from URL constructor is synchronous and safe in Next.js route handlers
 
     if (!teacherEmail) {
         return NextResponse.json(
@@ -22,14 +18,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!supabaseUrl || !serviceRoleKey) {
-        console.warn('[Teacher Subjects API] Supabase not configured - returning mock data');
-        return NextResponse.json({
-            subjects: [
-                { subject_name: 'Mathematics' },
-                { subject_name: 'Physical Sciences' },
-                { subject_name: 'Life Sciences' }
-            ]
-        });
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
@@ -37,38 +26,72 @@ export async function GET(request: NextRequest) {
     });
 
     try {
-        // Query the teacher_subjects_10 view
+        // 1. Resolve teacher email → id
+        const { data: teacher, error: teacherError } = await supabase
+            .from('teachers')
+            .select('id')
+            .eq('Email', teacherEmail)
+            .maybeSingle();
+
+        if (teacherError || !teacher) {
+            return NextResponse.json({ error: 'Teacher not found' }, { status: 404 });
+        }
+
+        // 2. Fetch subjects via teacher_class_groups → class_groups → subjects
         const { data, error } = await supabase
-            .from('teacher_subjects_10')
-            .select('subject_name')
-            .eq('teacher_email', teacherEmail);
+            .from('teacher_class_groups')
+            .select(`
+                class_groups (
+                    id,
+                    label,
+                    section,
+                    subjects ( id, name, code ),
+                    cohorts ( id, name, grade, academic_year )
+                )
+            `)
+            .eq('teacher_id', teacher.id);
 
         if (error) {
-            console.error('[Teacher Subjects API] Error:', error);
+            return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });
+        }
 
-            // Fallback: Query assessments table directly if view doesn't exist
-            const { data: fallbackData, error: fallbackError } = await supabase
-                .from('assessments')
-                .select('subject_name')
-                .eq('teacher_email', teacherEmail);
+        // Deduplicate subjects (teacher may teach same subject across sections)
+        const subjectMap = new Map<string, { subject_id: string; subject_name: string; subject_code: string; class_groups: { id: string; label: string; grade: number; academic_year: string }[] }>();
 
-            if (fallbackError) {
-                return NextResponse.json({ error: 'Failed to fetch subjects' }, { status: 500 });
+        type ClassGroupRow = {
+            id: string;
+            label: string;
+            section: string;
+            subjects: { id: string; name: string; code: string } | null;
+            cohorts: { id: string; name: string; grade: number; academic_year: string } | null;
+        };
+
+        for (const row of (data || [])) {
+            const cg = (row.class_groups as unknown) as ClassGroupRow | null;
+            if (!cg?.subjects) continue;
+
+            const subjectId = cg.subjects.id;
+            if (!subjectMap.has(subjectId)) {
+                subjectMap.set(subjectId, {
+                    subject_id: subjectId,
+                    subject_name: cg.subjects.name,
+                    subject_code: cg.subjects.code,
+                    class_groups: []
+                });
             }
-
-            // Get unique subjects
-            const uniqueSubjects = Array.from(new Set(fallbackData?.map(a => a.subject_name) || []));
-            return NextResponse.json({
-                subjects: uniqueSubjects.map(s => ({ subject_name: s }))
+            subjectMap.get(subjectId)!.class_groups.push({
+                id: cg.id,
+                label: cg.label,
+                grade: cg.cohorts?.grade ?? 0,
+                academic_year: cg.cohorts?.academic_year ?? ''
             });
         }
 
         return NextResponse.json({
-            subjects: data || []
+            subjects: Array.from(subjectMap.values())
         });
 
     } catch (error) {
-        console.error('[Teacher Subjects API] Unexpected error:', error);
         return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
     }
 }

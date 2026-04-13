@@ -145,17 +145,22 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
             const formData = new FormData();
             formData.append('assessment_id', assessment.id);
             formData.append('grade', String(assessment.grade ?? 10));
-            formData.append('csv', file);
+            formData.append('file', file);
 
             const response = await fetch('/api/teacher/marks/upload', {
                 method: 'POST',
                 body: formData,
             });
 
-            const data = await response.json();
+            console.log('[Upload] Response status:', response.status, response.statusText);
+            const text = await response.text();
+            console.log('[Upload] Raw response:', text);
+
+            let data;
+            try { data = JSON.parse(text); } catch { data = { error: text }; }
 
             if (!response.ok) {
-                setUploadResult({ uploaded: 0, skipped: [], errors: [data.error || 'Upload failed'] });
+                setUploadResult({ uploaded: 0, skipped: [], errors: [data.error || `Upload failed: ${response.status} ${response.statusText}`] });
             } else {
                 setUploadResult(data);
                 await fetchStudents();
@@ -226,7 +231,7 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                 <input
                     ref={csvInputRef}
                     type="file"
-                    accept=".csv,text/csv"
+                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     className="hidden"
                     onChange={handleCsvUpload}
                 />
@@ -244,7 +249,7 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                         ) : (
                             <>
                                 <span className="material-symbols-outlined">upload_file</span>
-                                Upload CSV
+                                Upload XLSX
                             </>
                         )}
                     </button>
@@ -270,9 +275,9 @@ const TeacherGradebookScreen: React.FC<TeacherGradebookScreenProps> = ({
                     </button>
                 </div>
 
-                {/* CSV Upload tip */}
+                {/* XLSX Upload tip */}
                 <p className="text-xs text-teal-300 mb-4 text-center">
-                    CSV format: <span className="font-mono bg-white/10 px-1 rounded">student_num,mark</span> (optional 3rd column: comments)
+                    Excel format: columns <span className="font-mono bg-white/10 px-1 rounded">student_num | mark | comments</span> (header row optional)
                 </p>
 
                 {/* Upload result */}

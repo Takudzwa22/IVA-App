@@ -53,11 +53,17 @@ const fetchAssessmentsFromDB = unstable_cache(
         const studentNum = parseInt(studentNumber, 10);
         const gradeNum = parseInt(grade, 10);
 
+        // Map grade number to the correct Subjects table name
+        const subjectsTableFor = (g: number) =>
+            g >= 10 ? `Subjects_${g}` :
+            g >= 7  ? 'Subjects_7_8_9' :
+                      'Subjects_4_5_6';
+
         // Resolve timetable alias if provided
         let resolvedSubjectName: string | null = null;
         if (aliasParam) {
             const { data: subjectsData } = await supabase
-                .from(`Subjects_${gradeNum}`)
+                .from(subjectsTableFor(gradeNum))
                 .select('id, Subject, timetable_aliases');
             if (subjectsData) {
                 for (const subj of subjectsData) {
@@ -80,40 +86,57 @@ const fetchAssessmentsFromDB = unstable_cache(
 
         if (cyclesError) throw new Error('Failed to fetch assessment cycles');
 
-        // 2. Determine current cycle
+        // 2. Determine current cycle (or "all" for every cycle)
+        const isAllCycles = cycleParam === 'all';
         const today = new Date().toISOString().split('T')[0];
         let currentCycle: AssessmentCycle | null = null;
-        if (cycleParam) {
+        if (isAllCycles) {
+            // For "all" mode, pick the active cycle as context but we'll query all assessments
+            currentCycle = cycles?.find((c: AssessmentCycle) => today >= c.start_date && today <= c.end_date) || cycles?.[0] || null;
+        } else if (cycleParam) {
             currentCycle = cycles?.find((c: AssessmentCycle) => c.cycle === parseInt(cycleParam, 10)) || null;
         } else {
             currentCycle = cycles?.find((c: AssessmentCycle) => today >= c.start_date && today <= c.end_date) || cycles?.[0] || null;
         }
 
-        if (!currentCycle) {
+        if (!currentCycle && !isAllCycles) {
             return { currentCycle: null, cycles: cycles || [], subjects: [], resolvedSubject: resolvedSubjectName };
         }
 
-        // 3. Get enrolled subjects
-        const { data: enrolledData, error: enrolledError } = await supabase
+        // 3. Get enrolled subjects — fall back to full subjects table if no enrollment record
+        const { data: enrolledData } = await supabase
             .from(`student_enrolled_subjects_${gradeNum}`)
             .select('*')
             .eq('student_num', studentNum)
-            .single();
+            .maybeSingle();
 
-        if (enrolledError) {
-            return { currentCycle, cycles: cycles || [], subjects: [], resolvedSubject: resolvedSubjectName };
-        }
+        let subjectNames: string[] = enrolledData?.subject_names || [];
+        let subjectIds: string[] = enrolledData?.subject_ids || [];
 
-        const subjectNames: string[] = enrolledData?.subject_names || [];
-        const subjectIds: string[] = enrolledData?.subject_ids || [];
-
+        // No enrollment record (table missing for this grade, or trial student) —
+        // fall back to all subjects in the relevant Subjects table
         if (subjectNames.length === 0) {
-            return { currentCycle, cycles: cycles || [], subjects: [], resolvedSubject: resolvedSubjectName };
+            const subjectsTable =
+                gradeNum >= 10 ? `Subjects_${gradeNum}` :
+                gradeNum >= 7  ? 'Subjects_7_8_9' :
+                                 'Subjects_4_5_6';
+
+            const { data: allSubjects } = await supabase
+                .from(subjectsTable)
+                .select('id, Subject')
+                .order('Subject');
+
+            if (allSubjects && allSubjects.length > 0) {
+                subjectNames = allSubjects.map((s: { Subject: string }) => s.Subject);
+                subjectIds   = allSubjects.map((s: { id: string }) => s.id?.toString() ?? '');
+            } else {
+                return { currentCycle, cycles: cycles || [], subjects: [], resolvedSubject: resolvedSubjectName };
+            }
         }
 
         // 4. Get timetable aliases for each subject
         const { data: subjectsWithAliases } = await supabase
-            .from(`Subjects_${gradeNum}`)
+            .from(subjectsTableFor(gradeNum))
             .select('id, Subject, timetable_aliases')
             .in('Subject', subjectNames);
 
@@ -124,13 +147,32 @@ const fetchAssessmentsFromDB = unstable_cache(
             }
         }
 
-        // 5. Get assessments for current cycle
-        const { data: assessments, error: assessmentsError } = await supabase
+        // 4b. Check if student is a trial student (to also show grade=0 assessments)
+        const { data: trialRow } = await supabase
+            .from('trial_students')
+            .select('student_num')
+            .eq('student_num', studentNum)
+            .maybeSingle();
+        const isTrialStudent = !!trialRow;
+
+        // 5. Get assessments (single cycle or all cycles; include grade=0 for trial students)
+        let assessmentQuery = supabase
             .from('assessments')
             .select('*')
             .in('subject_name', subjectNames)
-            .eq('cycle', currentCycle.cycle)
             .order('due_date', { ascending: true });
+
+        if (!isAllCycles && currentCycle) {
+            assessmentQuery = assessmentQuery.eq('cycle', currentCycle.cycle);
+        }
+
+        if (isTrialStudent) {
+            assessmentQuery = assessmentQuery.in('grade', [gradeNum, 0]);
+        } else {
+            assessmentQuery = assessmentQuery.eq('grade', gradeNum);
+        }
+
+        const { data: assessments, error: assessmentsError } = await assessmentQuery;
 
         if (assessmentsError) throw new Error('Failed to fetch assessments');
 
@@ -156,14 +198,35 @@ const fetchAssessmentsFromDB = unstable_cache(
             }
         }
 
-        // 7. Build response grouped by subject
-        const subjectsResponse: SubjectAssessments[] = subjectNames.map((subjectName, idx) => ({
-            subjectName,
-            subjectId: subjectIds[idx] || '',
-            timetableAliases: aliasesMap.get(subjectName) || [],
-            assessments: (assessments || [])
-                .filter((a: { subject_name: string }) => a.subject_name === subjectName)
-                .map((a: { id: string; subject_name: string; teacher_email: string | null; title: string; due_date: string; max_marks: number | null; weighting: number | null; is_test: boolean; cycle: number }): AssessmentWithMark => ({
+        // 7. Look up teacher full names for all unique teacher emails in assessments
+        const uniqueEmails = Array.from(new Set(
+            (assessments || []).map((a: { teacher_email: string | null }) => a.teacher_email).filter((e): e is string => Boolean(e))
+        ));
+        const teacherNameMap = new Map<string, string>();
+        if (uniqueEmails.length > 0) {
+            const { data: teacherRows } = await supabase
+                .from('teachers')
+                .select('"Full name", "Email"')
+                .in('Email', uniqueEmails);
+            if (teacherRows) {
+                for (const t of teacherRows) {
+                    if (t.Email && t['Full name']) teacherNameMap.set(t.Email, t['Full name']);
+                }
+            }
+        }
+
+        // 8. Build response grouped by subject
+        type AssessmentRow = { id: string; subject_name: string; teacher_email: string | null; title: string; due_date: string; max_marks: number | null; weighting: number | null; is_test: boolean; cycle: number };
+        const subjectsResponse: SubjectAssessments[] = subjectNames.map((subjectName, idx) => {
+            const subjectAssessments = (assessments || []).filter((a: AssessmentRow) => a.subject_name === subjectName);
+            const teacherEmail = subjectAssessments[0]?.teacher_email ?? null;
+            const teacherName = teacherEmail ? (teacherNameMap.get(teacherEmail) ?? null) : null;
+            return {
+                subjectName,
+                subjectId: subjectIds[idx] || '',
+                timetableAliases: aliasesMap.get(subjectName) || [],
+                teacherName,
+                assessments: subjectAssessments.map((a: AssessmentRow): AssessmentWithMark => ({
                     id: a.id,
                     subject_name: a.subject_name,
                     teacher_email: a.teacher_email,
@@ -175,12 +238,13 @@ const fetchAssessmentsFromDB = unstable_cache(
                     cycle: a.cycle,
                     mark: marksMap.get(a.id) || null,
                 })),
-        }));
+            };
+        });
 
         return { currentCycle, cycles: cycles || [], subjects: subjectsResponse, resolvedSubject: resolvedSubjectName };
     },
-    ['student-assessments'],
-    { revalidate: 300, tags: ['assessments'] } // 5-minute server cache
+    ['student-assessments-v5'],
+    { revalidate: 30, tags: ['assessments'] } // 30-second server cache (short for testing phase)
 );
 
 export async function GET(request: NextRequest) {

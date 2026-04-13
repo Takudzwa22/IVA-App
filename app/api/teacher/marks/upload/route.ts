@@ -1,12 +1,11 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import * as XLSX from 'xlsx';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-interface CsvRow {
+interface MarkRow {
     student_num: number;
     mark_obtained: number;
     comments: string | null;
@@ -18,37 +17,32 @@ interface UploadResult {
     errors: string[];
 }
 
-function parseCsv(text: string): CsvRow[] {
-    const lines = text.trim().split(/\r?\n/);
-    if (lines.length === 0) return [];
+function parseXlsx(buffer: ArrayBuffer): MarkRow[] {
+    const workbook = XLSX.read(buffer, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const raw: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-    // Detect and skip header row (first cell is non-numeric)
-    let startIdx = 0;
-    const firstCell = lines[0].split(',')[0].trim();
-    if (isNaN(Number(firstCell)) || firstCell === '') {
-        startIdx = 1;
-    }
+    if (raw.length === 0) return [];
 
-    const rows: CsvRow[] = [];
-    for (let i = startIdx; i < lines.length; i++) {
-        const cols = lines[i].split(',').map(c => c.trim());
-        if (cols.length < 2) continue;
+    // Skip header row if first cell is non-numeric
+    const startIdx = (isNaN(Number(raw[0][0])) || raw[0][0] === '') ? 1 : 0;
 
-        const studentNum = parseInt(cols[0], 10);
-        const mark = parseFloat(cols[1]);
-
+    const rows: MarkRow[] = [];
+    for (let i = startIdx; i < raw.length; i++) {
+        const row = raw[i] as unknown[];
+        const studentNum = parseInt(String(row[0]), 10);
+        const mark = parseFloat(String(row[1]));
         if (isNaN(studentNum) || isNaN(mark)) continue;
-
         rows.push({
             student_num: studentNum,
             mark_obtained: mark,
-            comments: cols[2] || null,
+            comments: row[2] ? String(row[2]).trim() : null,
         });
     }
     return rows;
 }
 
-// POST - Upload CSV marks for an assessment
+// POST - Upload XLSX marks for an assessment
 export async function POST(request: NextRequest) {
     if (!supabaseUrl || !serviceRoleKey) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
@@ -62,11 +56,11 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const assessmentId = formData.get('assessment_id') as string | null;
         const gradeRaw = formData.get('grade') as string | null;
-        const csvFile = formData.get('csv') as File | null;
+        const csvFile = (formData.get('file') ?? formData.get('xlsx') ?? formData.get('csv')) as File | null;
 
         if (!assessmentId || !gradeRaw || !csvFile) {
             return NextResponse.json(
-                { error: 'Missing required fields: assessment_id, grade, csv' },
+                { error: 'Missing required fields: assessment_id, grade, file' },
                 { status: 400 }
             );
         }
@@ -87,28 +81,40 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Assessment not found' }, { status: 404 });
         }
 
-        // Parse CSV
-        const csvText = await csvFile.text();
-        const rows = parseCsv(csvText);
+        // Parse XLSX
+        const buffer = await csvFile.arrayBuffer();
+        const rows = parseXlsx(buffer);
 
         if (rows.length === 0) {
-            return NextResponse.json({ error: 'CSV contains no valid rows' }, { status: 400 });
+            return NextResponse.json({ error: 'File contains no valid rows' }, { status: 400 });
         }
 
-        // Get valid student numbers for this grade
-        const gradeTable = `grade_${grade}_students`;
-        const { data: students, error: studentsError } = await supabase
-            .from(gradeTable)
-            .select('"Number"');
-
-        if (studentsError) {
-            return NextResponse.json(
-                { error: `Failed to fetch students for grade ${grade}` },
-                { status: 500 }
-            );
+        // Get valid student numbers for this grade (grade 0 = trial students)
+        let validStudentNums: Set<number>;
+        if (grade === 0) {
+            const { data: trialStudents, error: trialError } = await supabase
+                .from('trial_students')
+                .select('student_num');
+            if (trialError) {
+                return NextResponse.json(
+                    { error: 'Failed to fetch trial students' },
+                    { status: 500 }
+                );
+            }
+            validStudentNums = new Set((trialStudents || []).map((s: { student_num: number }) => s.student_num));
+        } else {
+            const gradeTable = `grade_${grade}_students`;
+            const { data: students, error: studentsError } = await supabase
+                .from(gradeTable)
+                .select('"Number"');
+            if (studentsError) {
+                return NextResponse.json(
+                    { error: `Failed to fetch students for grade ${grade}` },
+                    { status: 500 }
+                );
+            }
+            validStudentNums = new Set((students || []).map((s: { Number: number }) => s.Number));
         }
-
-        const validStudentNums = new Set((students || []).map((s: { Number: number }) => s.Number));
 
         // Separate matched vs unmatched rows
         const matched = rows.filter(r => validStudentNums.has(r.student_num));
@@ -169,7 +175,8 @@ export async function POST(request: NextRequest) {
                 );
 
             if (error) {
-                result.errors.push(`Failed to insert ${toInsert.length} new marks`);
+                console.error('[XLSX Upload] Insert error:', JSON.stringify(error));
+                result.errors.push(`Failed to insert ${toInsert.length} new marks: ${error.message}`);
             } else {
                 result.uploaded += toInsert.length;
             }
@@ -178,7 +185,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result);
 
     } catch (error) {
-        console.error('[CSV Upload API] Unexpected error:', error);
+        console.error('[XLSX Upload] Unexpected error:', error);
         return NextResponse.json({ error: 'An unexpected error occurred' }, { status: 500 });
     }
 }

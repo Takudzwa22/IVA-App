@@ -1,5 +1,3 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -43,17 +41,42 @@ export async function GET(request: NextRequest) {
     });
 
     try {
-        // Get students from the appropriate grade table
+        // Get students from the appropriate grade table (grade 0 = trial students)
         const grade = gradeParam ? parseInt(gradeParam, 10) : 10;
-        const gradeTable = `grade_${grade}_students`;
-        const { data: students, error: studentsError } = await supabase
-            .from(gradeTable)
-            .select('"Number", "Full Name", "Name", "Surname"')
-            .order('"Surname"', { ascending: true });
 
-        if (studentsError) {
-            console.error('[Teacher Marks API] Students error:', studentsError);
-            return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
+        let students: { Number: number; 'Full Name': string | null; Name: string | null; Surname: string | null }[] | null = null;
+
+        if (grade === 0) {
+            // Trial students table uses different column names
+            const { data: trialStudents, error: trialError } = await supabase
+                .from('trial_students')
+                .select('student_num, name, surname')
+                .order('surname', { ascending: true });
+
+            if (trialError) {
+                console.error('[Teacher Marks API] Trial students error:', trialError);
+                return NextResponse.json({ error: 'Failed to fetch trial students' }, { status: 500 });
+            }
+
+            // Map trial_students columns to match grade_X_students shape
+            students = (trialStudents || []).map(s => ({
+                Number: s.student_num,
+                'Full Name': s.name && s.surname ? `${s.name} ${s.surname}` : null,
+                Name: s.name,
+                Surname: s.surname,
+            }));
+        } else {
+            const gradeTable = `grade_${grade}_students`;
+            const { data: gradeStudents, error: studentsError } = await supabase
+                .from(gradeTable)
+                .select('"Number", "Full Name", "Name", "Surname"')
+                .order('"Surname"', { ascending: true });
+
+            if (studentsError) {
+                console.error('[Teacher Marks API] Students error:', studentsError);
+                return NextResponse.json({ error: 'Failed to fetch students' }, { status: 500 });
+            }
+            students = gradeStudents;
         }
 
         // Get marks for this assessment

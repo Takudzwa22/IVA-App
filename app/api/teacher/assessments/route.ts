@@ -1,5 +1,3 @@
-'use server';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -100,7 +98,7 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { subject_name, teacher_email, title, due_date, max_marks, weighting, is_test, cycle, grade } = body;
 
-        if (!subject_name || !teacher_email || !title || !due_date || !cycle || !grade) {
+        if (!subject_name || !teacher_email || !title || !due_date || !cycle || (grade === undefined || grade === null)) {
             return NextResponse.json(
                 { error: 'Missing required fields: subject_name, teacher_email, title, due_date, cycle, grade' },
                 { status: 400 }

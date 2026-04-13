@@ -41,7 +41,28 @@ export async function POST(request: NextRequest) {
             const studentNumber = parseInt(numberPart, 10);
 
             if (!isNaN(studentNumber) && studentNumber > 0) {
-                // Search all grade tables for the student
+                // Check trial_students first (teachers logging in as trial students)
+                const { data: trialStudent, error: trialError } = await supabase
+                    .from('trial_students')
+                    .select('student_num, name, surname, full_name, grade')
+                    .eq('student_num', studentNumber)
+                    .maybeSingle();
+
+                if (!trialError && trialStudent) {
+                    return NextResponse.json({
+                        type: 'student',
+                        data: {
+                            student_number: trialStudent.student_num,
+                            first_name: trialStudent.name,
+                            last_name: trialStudent.surname,
+                            full_name: trialStudent.full_name,
+                            grade: trialStudent.grade,
+                            user_role: 'student',
+                        }
+                    });
+                }
+
+                // Fall through to regular grade tables
                 for (const grade of STUDENT_GRADES) {
                     const tableName = grade === 'british'
                         ? 'grade_british_students'
@@ -54,7 +75,6 @@ export async function POST(request: NextRequest) {
                         .maybeSingle();
 
                     if (!error && data) {
-                        console.log('[Auth API] Found student in', tableName);
                         return NextResponse.json({
                             type: 'student',
                             data: {
@@ -79,7 +99,6 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
         if (!teacherError && teacher) {
-            console.log('[Auth API] Found teacher');
             return NextResponse.json({
                 type: 'teacher',
                 data: teacher
