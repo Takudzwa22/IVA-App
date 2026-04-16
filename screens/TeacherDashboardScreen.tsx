@@ -76,7 +76,7 @@ const TeacherDashboardScreen: React.FC<TeacherDashboardScreenProps> = ({
 
             <div className="px-6 py-8 pb-32 relative z-10">
                 {/* Header */}
-                <div className="mb-6">
+                <div className="mb-6" data-tour="greeting">
                     <p className="text-indigo-200 text-sm font-medium mb-1">Welcome back,</p>
                     <h1 className="text-3xl font-bold text-white">{teacherName}</h1>
                 </div>
@@ -159,7 +159,7 @@ const TeacherDashboardScreen: React.FC<TeacherDashboardScreenProps> = ({
                 </section>
 
                 {/* Subjects Section */}
-                <section>
+                <section data-tour="subjects">
                     <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span>
                         Your Subjects

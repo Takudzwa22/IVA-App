@@ -459,7 +459,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
         <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
         <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
 
-        <header className="flex justify-between items-center mb-6 relative z-10">
+        <header data-tour="greeting" className="flex justify-between items-center mb-6 relative z-10">
           <div className="flex items-center space-x-4">
             <div className="w-12 h-12 rounded-full border-2 border-white/20 p-0.5 flex items-center justify-center shrink-0">
               <div className="w-full h-full rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-lg shadow-sm">
@@ -584,7 +584,7 @@ const DashboardScreen: React.FC<DashboardScreenProps> = ({ student, onViewAnnoun
         )}
 
         {/* Classes Section */}
-        <section>
+        <section data-tour="timetable">
           <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
             {isToday ? "Today's Schedule" : `Schedule for ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })}`}
