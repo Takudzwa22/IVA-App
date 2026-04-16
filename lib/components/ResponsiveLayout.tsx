@@ -39,6 +39,7 @@ export function MobileLayout({ children, navItems, navActiveClass }: MobileLayou
                             <button
                                 key={item.key}
                                 onClick={item.onClick}
+                                data-tour={item.dataTour}
                                 className={`flex flex-col items-center flex-1 min-w-0 transition-all duration-200 ${item.isActive ? (navActiveClass || 'text-primary') : 'text-gray-400'}`}
                             >
                                 <span className={`material-symbols-outlined text-2xl transition-all duration-200 ${item.isActive ? 'fill scale-110' : ''}`}>

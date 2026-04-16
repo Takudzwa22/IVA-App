@@ -14,6 +14,7 @@ export interface NavItem {
     icon: string;
     isActive: boolean;
     onClick: () => void;
+    dataTour?: string;
 }
 
 interface SidebarProps {
@@ -184,6 +185,7 @@ export function SidebarWithAI({
                         key={item.key}
                         onClick={item.onClick}
                         title={isCollapsed ? item.label : undefined}
+                        data-tour={item.dataTour}
                         className={`
               w-full flex items-center gap-3 px-3 py-3 rounded-xl
               transition-all duration-200

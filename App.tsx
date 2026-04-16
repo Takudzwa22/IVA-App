@@ -133,6 +133,7 @@ const AppContent: React.FC = () => {
           icon: 'assignment',
           isActive: currentScreen === Screen.TEACHER_ASSESSMENTS || currentScreen === Screen.TEACHER_GRADEBOOK,
           onClick: () => setCurrentScreen(Screen.TEACHER_ASSESSMENTS),
+          dataTour: 'nav-assessments',
         },
         {
           key: 'attendance',
@@ -147,6 +148,7 @@ const AppContent: React.FC = () => {
           icon: 'campaign',
           isActive: currentScreen === Screen.ANNOUNCEMENTS,
           onClick: () => setCurrentScreen(Screen.ANNOUNCEMENTS),
+          dataTour: 'nav-news',
         },
         {
           key: 'profile',
@@ -154,6 +156,7 @@ const AppContent: React.FC = () => {
           icon: 'settings',
           isActive: currentScreen === Screen.PROFILE,
           onClick: () => setCurrentScreen(Screen.PROFILE),
+          dataTour: 'nav-settings',
         },
       ];
     }
@@ -180,6 +183,7 @@ const AppContent: React.FC = () => {
         icon: 'school',
         isActive: currentScreen === Screen.GRADES || currentScreen === Screen.SUBJECT_GRADES || currentScreen === Screen.MARKS_DETAIL,
         onClick: () => setCurrentScreen(Screen.GRADES),
+        dataTour: 'nav-grades',
       },
       {
         key: 'announcements',
@@ -187,6 +191,7 @@ const AppContent: React.FC = () => {
         icon: 'campaign',
         isActive: currentScreen === Screen.ANNOUNCEMENTS,
         onClick: () => setCurrentScreen(Screen.ANNOUNCEMENTS),
+        dataTour: 'nav-news',
       },
       {
         key: 'profile',
@@ -194,6 +199,7 @@ const AppContent: React.FC = () => {
         icon: 'settings',
         isActive: currentScreen === Screen.PROFILE,
         onClick: () => setCurrentScreen(Screen.PROFILE),
+        dataTour: 'nav-settings',
       },
     ];
   }, [currentScreen, isTeacher]);
