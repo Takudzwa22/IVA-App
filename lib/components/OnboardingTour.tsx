@@ -92,7 +92,10 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({
     if (forceShow) {
       setCurrentStep(0);
       setIsActive(true);
-      return;
+      return () => {
+        // Dismiss tour if forceShow is toggled off (e.g. user navigates away)
+        setIsActive(false);
+      };
     }
 
     const key = getTourStorageKey(userId);

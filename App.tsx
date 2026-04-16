@@ -266,7 +266,7 @@ const AppContent: React.FC = () => {
         case Screen.PROFILE:
           return <ProfileScreen student={null} teacher={authState.teacher} onLogout={handleLogout} onReplayTour={() => {
             setCurrentScreen(Screen.TEACHER_DASHBOARD);
-            setForceTour(true);
+            setTimeout(() => setForceTour(true), 500);
           }} />;
         case Screen.ATTENDANCE:
           return <AttendanceScreen />;
@@ -329,7 +329,7 @@ const AppContent: React.FC = () => {
       case Screen.PROFILE:
         return <ProfileScreen student={authState.student} onLogout={handleLogout} onReplayTour={() => {
           setCurrentScreen(Screen.DASHBOARD);
-          setForceTour(true);
+          setTimeout(() => setForceTour(true), 500);
         }} />;
       case Screen.ANNOUNCEMENTS:
         return <AnnouncementsScreen student={authState.student} />;
