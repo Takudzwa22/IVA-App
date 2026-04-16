@@ -8,6 +8,7 @@ interface ProfileScreenProps {
   student: Student | null;
   teacher?: Teacher | null;
   onLogout?: () => void;
+  onReplayTour?: () => void;
 }
 
 // Support Issue Types
@@ -17,7 +18,7 @@ const ISSUE_TYPES = [
   { value: 'other', label: 'Other issue' },
 ];
 
-const ProfileScreen: React.FC<ProfileScreenProps> = ({ student, teacher, onLogout }) => {
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ student, teacher, onLogout, onReplayTour }) => {
   const signOut = useSignOut();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [showSupport, setShowSupport] = useState(false);
@@ -182,6 +183,25 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ student, teacher, onLogou
                   }`} />
               </button>
             </li>
+
+            {/* Replay Tour */}
+            {onReplayTour && (
+              <li
+                onClick={onReplayTour}
+                className="flex items-center justify-between cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-2 rounded-xl transition-colors"
+              >
+                <div className="flex items-center">
+                  <div className="bg-indigo-50 p-2 rounded-xl mr-4">
+                    <span className="material-symbols-outlined text-indigo-600">tour</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900 text-sm">App Tour</p>
+                    <p className="text-xs text-gray-500">Replay the guided walkthrough</p>
+                  </div>
+                </div>
+                <span className="material-symbols-outlined text-gray-400">chevron_right</span>
+              </li>
+            )}
 
             {/* Help & Support */}
             <li

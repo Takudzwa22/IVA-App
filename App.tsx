@@ -17,6 +17,7 @@ import MarksScreen from './screens/MarksScreen';
 import TeacherDashboardScreen from './screens/TeacherDashboardScreen';
 import TeacherAssessmentsScreen from './screens/TeacherAssessmentsScreen';
 import TeacherGradebookScreen from './screens/TeacherGradebookScreen';
+import OnboardingTour from './lib/components/OnboardingTour';
 
 // Subject type for grades navigation
 interface SubjectInfo {
@@ -52,6 +53,11 @@ const AppContent: React.FC = () => {
   const [selectedTeacherAssessment, setSelectedTeacherAssessment] = useState<Assessment | null>(null);
 
   const isTeacher = authState.teacher !== null;
+  const [forceTour, setForceTour] = useState(false);
+
+  const tourUserId = isTeacher
+    ? (authState.teacher?.Email || 'teacher')
+    : (authState.student?.student_number?.toString() || 'student');
 
   const handleSubjectSelect = (_subject: SubjectInfo) => {
     // Navigate directly to the real Grades page instead of the placeholder SubjectGradesScreen
@@ -258,7 +264,10 @@ const AppContent: React.FC = () => {
             />
           );
         case Screen.PROFILE:
-          return <ProfileScreen student={null} teacher={authState.teacher} onLogout={handleLogout} />;
+          return <ProfileScreen student={null} teacher={authState.teacher} onLogout={handleLogout} onReplayTour={() => {
+            setCurrentScreen(Screen.TEACHER_DASHBOARD);
+            setForceTour(true);
+          }} />;
         case Screen.ATTENDANCE:
           return <AttendanceScreen />;
         case Screen.ANNOUNCEMENTS:
@@ -318,7 +327,10 @@ const AppContent: React.FC = () => {
           />
         );
       case Screen.PROFILE:
-        return <ProfileScreen student={authState.student} onLogout={handleLogout} />;
+        return <ProfileScreen student={authState.student} onLogout={handleLogout} onReplayTour={() => {
+          setCurrentScreen(Screen.DASHBOARD);
+          setForceTour(true);
+        }} />;
       case Screen.ANNOUNCEMENTS:
         return <AnnouncementsScreen student={authState.student} />;
       default:
@@ -332,6 +344,12 @@ const AppContent: React.FC = () => {
       navActiveClass={getNavActiveClass()}
     >
       {renderScreen()}
+      <OnboardingTour
+        userId={tourUserId}
+        isTeacher={isTeacher}
+        forceShow={forceTour}
+        onComplete={() => setForceTour(false)}
+      />
     </ResponsiveLayout>
   );
 };
