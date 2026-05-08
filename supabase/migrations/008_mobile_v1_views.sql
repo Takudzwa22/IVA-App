@@ -2,16 +2,21 @@
 -- Pre-joined read view for student grades. Other views deferred to later plans.
 
 -- v_student_current_grades: assessments × marks for a student in a cycle, grade-aware.
+-- Schema note: prod `assessments` uses subject_name, weighting, max_marks, class_group,
+-- is_test, due_date, teacher_email (no subject_id / weight / max_mark / class_group_id).
 create or replace view public.v_student_current_grades as
   select
     am.student_num,
     a.grade,
     a.cycle,
-    a.subject_id,
+    a.subject_name,
+    a.class_group,
     a.id as assessment_id,
     a.title as assessment_title,
-    a.weight,
-    a.max_mark,
+    a.due_date,
+    a.is_test,
+    a.weighting,
+    a.max_marks,
     am.mark_obtained,
     am.is_published,
     am.teacher_comments,
