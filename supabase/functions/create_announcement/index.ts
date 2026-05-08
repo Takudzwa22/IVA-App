@@ -36,9 +36,22 @@ Deno.serve(async (req) => {
     if (!body[k]) return new Response(JSON.stringify({ error: `missing_${k}` }), { status: 400 });
   }
 
-  // Idempotency check
-  const { data: existing } = await sb.from("mutation_log").select("result").eq("idempotency_key", body.idempotency_key).maybeSingle();
-  if (existing) return new Response(JSON.stringify(existing.result), { status: 200, headers: { "content-type": "application/json" } });
+  // Atomic idempotency reservation
+  const { error: claimErr } = await sb
+    .from("mutation_log")
+    .insert({ idempotency_key: body.idempotency_key, result: { ok: false, pending: true } })
+    .select("idempotency_key")
+    .single();
+
+  if (claimErr) {
+    // PG conflict code is "23505". Anything else is a real error.
+    if (claimErr.code !== "23505") {
+      return new Response(JSON.stringify({ error: "claim_failed", detail: claimErr.message }), { status: 500 });
+    }
+    // Key already claimed — fetch and return the cached result.
+    const { data: cached } = await sb.from("mutation_log").select("result").eq("idempotency_key", body.idempotency_key).single();
+    return new Response(JSON.stringify(cached?.result ?? { ok: false }), { status: 200, headers: { "content-type": "application/json" } });
+  }
 
   // Insert announcement
   const { data: row, error } = await sb.from("announcements").insert({
@@ -58,7 +71,7 @@ Deno.serve(async (req) => {
   if (error) return new Response(JSON.stringify({ error: "insert_failed", detail: error.message }), { status: 500 });
 
   const result = { ok: true, id: row.id };
-  await sb.from("mutation_log").insert({ idempotency_key: body.idempotency_key, result });
+  await sb.from("mutation_log").update({ result }).eq("idempotency_key", body.idempotency_key);
 
   return new Response(JSON.stringify(result), { status: 200, headers: { "content-type": "application/json" } });
 });
